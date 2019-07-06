@@ -5,3 +5,4 @@
 /# shellcheck/d
 /^[[:blank:]]*##*[[:blank:]]*$/d
 /^# [[:digit:]]\. [^[:blank:]].*$/d
+s/ATOM_CI_DRY_RUN="" //g

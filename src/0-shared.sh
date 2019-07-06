@@ -2,7 +2,7 @@
 
 # Print a colourful "==> $1"
 title(){
-	printf >&2 '\e[31m==>\e[0m \e[1m%s\e[0m\n' "$1"
+	printf >&2 '\e[32m==>\e[0m \e[1m%s\e[0m\n' "$1"
 }
 
 # Print a command before executing it
@@ -75,7 +75,7 @@ getAssetURL(){
 # Download an asset file
 # - download [save-as] [from-url]
 downloadAsset(){
-	printf >&2 'Downloading "%s" from \e[4m%s\e[0m...\n' "$1" "$2"
+	printf >&2 'Downloading "%s" from \e[4m%s\e[0m\n' "$1" "$2"
 	if [ "$ATOM_CI_DRY_RUN" ]; then return 0; fi # DEBUG
 	curl -# -LH 'Accept: application/octet-stream' -o "$1" "$2" || {
 		set -- "$1" "$2" "$?"

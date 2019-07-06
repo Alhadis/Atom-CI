@@ -8,6 +8,10 @@ set -e
 # shellcheck source=./0-shared.sh
 . "${0%/*}"/0-shared.sh
 
+ATOM_SCRIPT_PATH=${ATOM_SCRIPT_PATH:=atom}
+APM_SCRIPT_PATH=${APM_SCRIPT_PATH:=apm}
+NPM_SCRIPT_PATH=${NPM_SCRIPT_PATH:=npm}
+
 # Run "lint" script if one exists in package.json; otherwise, use assumed defaults
 if haveScript lint; then
 	cmd "${NPM_SCRIPT_PATH}" run lint
