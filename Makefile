@@ -1,4 +1,4 @@
-all: lint run.sh
+all: lint dist/main.sh
 
 
 # Identify potential portability hassles in shell-scripts
@@ -10,15 +10,15 @@ lint: src/*.sh
 
 
 # Concatenate each source file into a single shell-script
-run.sh: src/*.sh
+dist/main.sh: src/*.sh
 	printf '#!/bin/sh\n' > $@
 	printf 'set -e\n'   >> $@
-	cat $^ | sed -f src/strip.sed >> $@
+	cat $^ | sed -f src/strip.sed | cat -s >> $@
 	chmod +x $@
 
 
 # Nuke generated build targets
 clean:
-	rm -f run.sh
+	rm -f dist/*
 
 .PHONY: clean

@@ -4,3 +4,4 @@
 /#[[:blank:]]DEBUG$/d
 /# shellcheck/d
 /^[[:blank:]]*##*[[:blank:]]*$/d
+/^# [[:digit:]]\. [^[:blank:]].*$/d
