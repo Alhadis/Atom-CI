@@ -13,7 +13,7 @@ lint: src/*.sh
 run.sh: src/*.sh
 	printf '#!/bin/sh\n' > $@
 	printf 'set -e\n'   >> $@
-	cat $^ | sed '/^#!/d; /^set -e$$/d; s/^# RUN: //' >> $@
+	cat $^ | sed -f src/strip.sed >> $@
 	chmod +x $@
 
 
