@@ -15,12 +15,12 @@ runLint(){
 	if haveScript lint; then
 		"${NPM_SCRIPT_PATH}" run lint
 	else
-		for linter of coffeelint eslint tslint; do
-			haveDep "$linter" || continue
-			for dir of lib src spec test; do
+		for linter in coffeelint eslint tslint; do
+			haveDep $linter || continue
+			for dir in lib src spec test; do
 				if [ -d $dir ]; then
-					printf >&2 'Linting ./%s/* with %s...\n' "$dir" "$linter"
-					npx "$1" ./$dir || exit $?
+					printf >&2 'Linting ./%s/* with %s...\n' "$dir" $linter
+					npx $linter ./$dir || exit $?
 				fi
 			done
 		done
@@ -32,7 +32,7 @@ runTests(){
 	if haveScript test; then
 		"${NPM_SCRIPT_PATH}" run test
 	else
-		for dir of spec specs test tests; do
+		for dir in spec specs test tests; do
 			if [ -d $dir ]; then
 				printf >&2 'Running specs...\n'
 				"${ATOM_SCRIPT_PATH}" --test "./$dir" || exit $?
@@ -42,4 +42,4 @@ runTests(){
 	fi
 }
 
-runLint && runTests
+# RUN: runLint && runTests
