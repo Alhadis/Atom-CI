@@ -75,5 +75,6 @@ case `uname -s | tr A-Z a-z` in
 		NPM_SCRIPT_PATH="${HOME}/$2/usr/share/${ATOM_SCRIPT_NAME}/resources/app/apm/node_modules/.bin/npm"
 		PATH="${PATH}:${HOME}/$2/usr/bin"
 		export APM_SCRIPT_NAME APM_SCRIPT_PATH ATOM_SCRIPT_NAME ATOM_SCRIPT_PATH NPM_SCRIPT_PATH PATH
+		cmd ln -fs "${PWD}/${ATOM_SCRIPT_PATH#./}" "${APM_SCRIPT_PATH%/*}/atom"
 	;;
 esac
