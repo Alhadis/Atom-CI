@@ -54,6 +54,7 @@ case `uname -s | tr A-Z a-z` in
 		cmd /sbin/start-stop-daemon \
 			--start \
 			--quiet \
+			--oknodo \
 			--pidfile /tmp/custom_xvfb_99.pid \
 			--make-pidfile \
 			--background \
