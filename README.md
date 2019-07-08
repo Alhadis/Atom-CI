@@ -4,7 +4,7 @@ Atom CI
 This is a script for setting up continuous integration with an Atom project.
 It's fundamentally the same as [`atom/ci`][], with the following differences:
 
-1.	__GitHub's [APIs][] are consulted for release downloads.__  
+1.	__GitHub's release pages are consulted directly for downloads.__  
 	This is a tad bit slower than downloading from [`atom.io`][],
 	but it means sudden changes to their infrastructure won't break your build.
 
