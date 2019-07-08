@@ -129,6 +129,7 @@ case `uname -s | tr A-Z a-z` in
 		NPM_SCRIPT_PATH="./$2/${ATOM_APP_NAME}/Contents/Resources/app/apm/node_modules/.bin/npm"
 		PATH="${PATH}:${TRAVIS_BUILD_DIR}/$2/${ATOM_APP_NAME}/Contents/Resources/app/apm/node_modules/.bin"
 		export APM_SCRIPT_PATH ATOM_APP_NAME ATOM_PATH ATOM_SCRIPT_NAME ATOM_SCRIPT_PATH NPM_SCRIPT_PATH PATH
+		cmd ln -fs "${PWD}/${ATOM_SCRIPT_PATH#./}" "${APM_SCRIPT_PATH%/*}/atom"
 	;;
 	
 	# Linux (Debian assumed)
@@ -217,6 +218,8 @@ if [ "$APM_TEST_PACKAGES" ]; then
 		cmd "${APM_SCRIPT_PATH}" install "${pkg}"
 	done
 fi
+
+title 'Running tasks'
 
 ATOM_SCRIPT_PATH=${ATOM_SCRIPT_PATH:=atom}
 APM_SCRIPT_PATH=${APM_SCRIPT_PATH:=apm}

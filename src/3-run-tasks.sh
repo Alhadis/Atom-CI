@@ -8,6 +8,8 @@ set -e
 # shellcheck source=./0-shared.sh
 . "${0%/*}"/0-shared.sh
 
+title 'Running tasks'
+
 ATOM_SCRIPT_PATH=${ATOM_SCRIPT_PATH:=atom}
 APM_SCRIPT_PATH=${APM_SCRIPT_PATH:=apm}
 NPM_SCRIPT_PATH=${NPM_SCRIPT_PATH:=npm}
