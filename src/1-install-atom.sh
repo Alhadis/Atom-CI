@@ -73,7 +73,11 @@ case `uname -s | tr A-Z a-z` in
 		NPM_SCRIPT_PATH="${HOME}/$2/usr/share/${ATOM_SCRIPT_NAME}/resources/app/apm/node_modules/.bin/npm"
 		PATH="${PATH}:${HOME}/$2/usr/bin:${NPM_SCRIPT_PATH%/*}"
 		export APM_SCRIPT_NAME APM_SCRIPT_PATH ATOM_SCRIPT_NAME ATOM_SCRIPT_PATH NPM_SCRIPT_PATH PATH
-		cmd ln -fs "$ATOM_SCRIPT_PATH" "${APM_SCRIPT_PATH%/*}/atom"
+		
+		if [ "$ATOM_CHANNEL" = beta ]; then
+			cmd ln -s "$ATOM_SCRIPT_PATH" "${ATOM_SCRIPT_PATH%-beta}"
+			cmd ln -s "$APM_SCRIPT_PATH"  "${APM_SCRIPT_PATH%-beta}"
+		fi
 		cmd env | sort
 	;;
 esac
