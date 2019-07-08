@@ -25,11 +25,12 @@ showVersions(){
 # Install packages with `apm`
 apmInstall(){
 	title 'Installing dependencies'
+	set -- "$1" "`tput smul`" "`tput rmul`"
 	if [ -f package-lock.json ]; then
-		printf >&2 'Installing from \e[4m%s\e[24m\n' package-lock.json
+		printf >&2 'Installing from %s%s%s\n' "$2" package-lock.json "$3"
 		cmd "${APM_SCRIPT_PATH}" ci $1
 	else
-		printf >&2 'Installing from \e[4m%s\e[24m\n' package.json
+		printf >&2 'Installing from %s%s%s\n' "$2" package.json "$3"
 		cmd "${APM_SCRIPT_PATH}" install $1
 		cmd "${APM_SCRIPT_PATH}" clean
 	fi

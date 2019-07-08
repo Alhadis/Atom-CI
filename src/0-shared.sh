@@ -2,21 +2,22 @@
 
 # Print a colourful "==> $1"
 title(){
-	printf >&2 '\e[34m==>\e[0m \e[1m%s\e[0m\n' "$1"
+	set -- "$1" "`tput setaf 4`" "`tput bold`" "`tput sgr0`"
+	printf >&2 '%s==>%s %s%s%s\n' "$2" "$4" "$3" "$1" "$4"
 }
 
 # Print a command before executing it
 cmd(){
-	printf >&2 '\e[32m$ %s\e[0m\n' "$*"
+	printf >&2 '%s$ %s%s\n' "`tput setaf 2`" "$*" "`tput sgr0`"
 	if [ "$ATOM_CI_DRY_RUN" ]; then return 0; fi # DEBUG
 	"$@"
 }
 
 # Terminate execution with an error message
 die(){
-	printf >&2 '\e[1;31mfatal:\e[22m %s\e[0m\n' "$1"
-	shift
-	exit ${1:-1}
+	set -- "$1" "$2" "`tput bold`" "`tput setaf 1`" "`tput sgr0`"
+	printf >&2 '%s%sfatal:%s%s %s%s\n' "$3" "$4" "$5" "$4" "$1" "$5"
+	exit ${2:-1}
 }
 
 # Check if a devDependency is listed in package.json
@@ -90,7 +91,7 @@ downloadAtom(){
 		stable) set -- "`getLatestStableRelease atom/atom "$2"`" "$2" ;;
 		*)      die "Unsupported release type: $1"       ;;
 	esac
-	printf >&2 'Downloading "%s" from \e[4m%s\e[0m\n' "$2" "$1"
+	printf >&2 'Downloading "%s" from %s%s%s\n' "$2" "`tput smul`" "$1" "`tput sgr0`"
 	if [ "$ATOM_CI_DRY_RUN" ]; then return 0; fi # DEBUG
 	cmd curl -#fqL -H 'Accept: application/octet-stream' -o "$2" "$1" \
 	|| die 'Failed to download Atom' $?
