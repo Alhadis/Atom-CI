@@ -58,9 +58,12 @@ case `uname -s | tr A-Z a-z` in
 			--make-pidfile \
 			--background \
 			--exec /usr/bin/Xvfb \
-			-- :99 -ac -screen 0 1280x1024x16
+			-- :99 -ac -screen 0 1280x1024x16 \
+			|| die 'Unable to start Xvfb'
 		DISPLAY=:99; export DISPLAY
-		cmd dpkg-deb -x "$1" "${HOME}/$2"
+		
+		ATOM_PATH="${PWD}/$2"
+		cmd dpkg-deb -x "$1" "$ATOM_PATH"
 		
 		if [ "$ATOM_CHANNEL" = beta ]; then
 			ATOM_SCRIPT_NAME='atom-beta'
@@ -69,11 +72,11 @@ case `uname -s | tr A-Z a-z` in
 			ATOM_SCRIPT_NAME='atom'
 			APM_SCRIPT_NAME='apm'
 		fi
-		ATOM_SCRIPT_PATH="${HOME}/$2/usr/bin/${ATOM_SCRIPT_NAME}"
-		APM_SCRIPT_PATH="${HOME}/$2/usr/bin/${APM_SCRIPT_NAME}"
-		NPM_SCRIPT_PATH="${HOME}/$2/usr/share/${ATOM_SCRIPT_NAME}/resources/app/apm/node_modules/.bin/npm"
-		PATH="${PATH}:${HOME}/$2/usr/bin:${NPM_SCRIPT_PATH%/*}"
-		export APM_SCRIPT_NAME APM_SCRIPT_PATH ATOM_SCRIPT_NAME ATOM_SCRIPT_PATH NPM_SCRIPT_PATH PATH
+		ATOM_SCRIPT_PATH="${ATOM_PATH}/usr/bin/${ATOM_SCRIPT_NAME}"
+		APM_SCRIPT_PATH="${ATOM_PATH}/usr/bin/${APM_SCRIPT_NAME}"
+		NPM_SCRIPT_PATH="${ATOM_PATH}/usr/share/${ATOM_SCRIPT_NAME}/resources/app/apm/node_modules/.bin/npm"
+		PATH="${PATH}:${ATOM_PATH}/usr/bin:${NPM_SCRIPT_PATH%/*}"
+		export APM_SCRIPT_NAME APM_SCRIPT_PATH ATOM_SCRIPT_NAME ATOM_SCRIPT_PATH ATOM_PATH NPM_SCRIPT_PATH PATH
 		
 		if [ "$ATOM_CHANNEL" = beta ]; then
 			cmd ln -s "$ATOM_SCRIPT_PATH" "${ATOM_SCRIPT_PATH%-beta}"
