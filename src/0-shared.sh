@@ -66,19 +66,19 @@ scrapeDownloadURL(){
 # Retrieve the URL to download the latest stable release
 # - Arguments: [user/repo] [filename]
 getLatestStableRelease(){
-	curl -qL "https://github.com/$1/releases/latest" | scrapeDownloadURL "$2"
+	curl -sSqL "https://github.com/$1/releases/latest" | scrapeDownloadURL "$2"
 }
 
 # Retrieve the URL to download the latest beta release
 # - Arguments: [user/repo] [filename]
 getLatestBetaRelease(){
-	curl -qL "https://github.com/$1/releases.atom" \
+	curl -sSqL "https://github.com/$1/releases.atom" \
 	| cleanHrefs \
 	| grep -oe ' href="[^"]*/releases/tag/[^"]*"' \
 	| grep -e '.-beta' \
 	| head -n1 \
 	| sed -e 's/ href="//; s/"$//' \
-	| xargs curl -qL \
+	| xargs curl -sSqL \
 	| scrapeDownloadURL "$2"
 }
 
