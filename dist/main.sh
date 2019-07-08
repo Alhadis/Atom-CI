@@ -20,6 +20,14 @@ die(){
 	exit ${2:-1}
 }
 
+# Abort script if current directory lacks a test directory and package.json file
+assertValidProject(){
+	[ -f package.json ] || die 'No package.json file found'
+	[ -s package.json ] || die 'package.json appears to be empty'
+	[ -d spec ] || [ -d specs ] || [ -d test ] || [ -d tests ] \
+		|| die 'Project must contain a test directory'
+}
+
 # Check if a devDependency is listed in package.json
 haveDep(){
 	"${NPM_SCRIPT_PATH}" ls --parseable --dev --depth=0 "$1" 2>/dev/null | grep -q "$1$"
@@ -95,6 +103,8 @@ downloadAtom(){
 	cmd curl -#fqL -H 'Accept: application/octet-stream' -o "$2" "$1" \
 	|| die 'Failed to download Atom' $?
 }
+
+assertValidProject
 
 # Verify that the requested channel is valid
 ATOM_CHANNEL=${ATOM_CHANNEL:=stable}

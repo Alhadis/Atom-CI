@@ -7,6 +7,7 @@ set -e
 
 # shellcheck source=./0-shared.sh
 . "${0%/*}"/0-shared.sh
+assertValidProject
 
 # Verify that the requested channel is valid
 ATOM_CHANNEL=${ATOM_CHANNEL:=stable}

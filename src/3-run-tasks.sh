@@ -7,6 +7,7 @@ set -e
 
 # shellcheck source=./0-shared.sh
 . "${0%/*}"/0-shared.sh
+assertValidProject # DEBUG
 
 title 'Running tasks'
 
