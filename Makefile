@@ -15,6 +15,8 @@ dist/main.sh: src/*.sh
 	printf 'set -e\n'   >> $@
 	cat $^ | sed -f src/strip.sed | cat -s >> $@
 	chmod +x $@
+	shellcheck -Swarning -ssh $@
+	checkbashisms $@
 
 
 # Nuke generated build targets
