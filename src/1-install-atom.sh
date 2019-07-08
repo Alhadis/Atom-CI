@@ -59,12 +59,6 @@ case `uname -s | tr A-Z a-z` in
 			--exec /usr/bin/Xvfb \
 			-- :99 -ac -screen 0 1280x1024x16
 		DISPLAY=:99; export DISPLAY
-		
-		# Upgrade dpkg(1) to workaround bug #1730627
-		case `lsb_release -sc` in
-			trusty) cmd sudo apt-get install -qq -y dpkg ;;
-		esac
-		
 		cmd dpkg-deb -x "$1" "${HOME}/$2"
 		
 		if [ "$ATOM_CHANNEL" = beta ]; then
