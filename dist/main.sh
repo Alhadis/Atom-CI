@@ -116,21 +116,18 @@ case `uname -s | tr A-Z a-z` in
 		
 		if [ "$ATOM_CHANNEL" = beta ]; then
 			ATOM_APP_NAME='Atom Beta.app'
-			ATOM_SCRIPT_NAME='atom-beta'
-			ATOM_SCRIPT_PATH='./atom-beta'
-			cmd ln -s "${PWD}/$2/${ATOM_APP_NAME}/Contents/Resources/app/atom.sh" "${ATOM_SCRIPT_PATH}"
 		else
 			ATOM_APP_NAME='Atom.app'
-			ATOM_SCRIPT_NAME='atom.sh'
-			ATOM_SCRIPT_PATH="${PWD}/$2/${ATOM_APP_NAME}/Contents/Resources/app/atom.sh"
 		fi
 		
 		ATOM_PATH="${PWD}/$2"
-		APM_SCRIPT_PATH="${PWD}/$2/${ATOM_APP_NAME}/Contents/Resources/app/apm/node_modules/.bin/apm"
-		NPM_SCRIPT_PATH="${PWD}/$2/${ATOM_APP_NAME}/Contents/Resources/app/apm/node_modules/.bin/npm"
-		PATH="${PATH}:${PWD}/$2/${ATOM_APP_NAME}/Contents/Resources/app/apm/node_modules/.bin"
+		ATOM_SCRIPT_NAME='atom.sh'
+		ATOM_SCRIPT_PATH="${ATOM_PATH}/${ATOM_APP_NAME}/Contents/Resources/app/atom.sh"
+		APM_SCRIPT_PATH="${ATOM_PATH}/${ATOM_APP_NAME}/Contents/Resources/app/apm/node_modules/.bin/apm"
+		NPM_SCRIPT_PATH="${ATOM_PATH}/${ATOM_APP_NAME}/Contents/Resources/app/apm/node_modules/.bin/npm"
+		PATH="${PATH}:${ATOM_PATH}/${ATOM_APP_NAME}/Contents/Resources/app/apm/node_modules/.bin"
 		export APM_SCRIPT_PATH ATOM_APP_NAME ATOM_PATH ATOM_SCRIPT_NAME ATOM_SCRIPT_PATH NPM_SCRIPT_PATH PATH
-		cmd ln -fs "${PWD}/${ATOM_SCRIPT_PATH#./}" "${APM_SCRIPT_PATH%/*}/atom"
+		cmd ln -fs "$ATOM_SCRIPT_PATH" "${APM_SCRIPT_PATH%/*}/atom"
 		cmd env | sort
 	;;
 	
@@ -164,7 +161,7 @@ case `uname -s | tr A-Z a-z` in
 		NPM_SCRIPT_PATH="${HOME}/$2/usr/share/${ATOM_SCRIPT_NAME}/resources/app/apm/node_modules/.bin/npm"
 		PATH="${PATH}:${HOME}/$2/usr/bin:${NPM_SCRIPT_PATH%/*}"
 		export APM_SCRIPT_NAME APM_SCRIPT_PATH ATOM_SCRIPT_NAME ATOM_SCRIPT_PATH NPM_SCRIPT_PATH PATH
-		cmd ln -fs "${PWD}/${ATOM_SCRIPT_PATH#./}" "${APM_SCRIPT_PATH%/*}/atom"
+		cmd ln -fs "$ATOM_SCRIPT_PATH" "${APM_SCRIPT_PATH%/*}/atom"
 		cmd env | sort
 	;;
 esac
