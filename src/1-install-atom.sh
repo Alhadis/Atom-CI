@@ -8,7 +8,6 @@ set -e
 # shellcheck source=./0-shared.sh
 . "${0%/*}"/0-shared.sh
 assertValidProject
-
 startFold 'install-atom'
 
 # Verify that the requested channel is valid
@@ -88,8 +87,8 @@ case `uname -s | tr A-Z a-z` in
 esac
 
 startFold 'env-dump'
-printf >&2 'Dumping environment variables\n'
-cmd env | sort
+cmdfmt 'env | sort'
+env | sort
 endFold 'env-dump'
 
 endFold 'install-atom'

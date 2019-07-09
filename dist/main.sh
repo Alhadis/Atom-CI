@@ -7,9 +7,14 @@ title(){
 	printf >&2 '%s==>%s %s%s%s\n' "$2" "$4" "$3" "$1" "$4"
 }
 
+# Print a colourful shell-command prefixed by a "$ "
+cmdfmt(){
+	printf >&2 '%s$ %s%s\n' "`tput setaf 2`" "$*" "`tput sgr0`"
+}
+
 # Print a command before executing it
 cmd(){
-	printf >&2 '%s$ %s%s\n' "`tput setaf 2`" "$*" "`tput sgr0`"
+	cmdfmt "$*"
 	"$@"
 }
 
@@ -141,7 +146,6 @@ mkalias(){
 }
 
 assertValidProject
-
 startFold 'install-atom'
 
 # Verify that the requested channel is valid
@@ -221,8 +225,8 @@ case `uname -s | tr A-Z a-z` in
 esac
 
 startFold 'env-dump'
-printf >&2 'Dumping environment variables\n'
-cmd env | sort
+cmdfmt 'env | sort'
+env | sort
 endFold 'env-dump'
 
 endFold 'install-atom'
@@ -232,14 +236,12 @@ APM_SCRIPT_PATH=${APM_SCRIPT_PATH:=apm}
 
 # Display version info for Atom/Node/?PM
 showVersions(){
-	startFold 'version-info'
 	printf >&2 'Printing version info\n'
 	cmd "${ATOM_SCRIPT_PATH}" --version
 	cmd "${APM_SCRIPT_PATH}"  --version --no-color
 	if [ $# -eq 0 ]; then return 0; fi
 	cmd node --version
 	cmd npm --version
-	endFold 'version-info'
 }
 
 # Install packages with `apm`

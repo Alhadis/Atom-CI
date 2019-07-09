@@ -15,14 +15,12 @@ APM_SCRIPT_PATH=${APM_SCRIPT_PATH:=apm}
 
 # Display version info for Atom/Node/?PM
 showVersions(){
-	startFold 'version-info'
 	printf >&2 'Printing version info\n'
 	ATOM_CI_DRY_RUN="" cmd "${ATOM_SCRIPT_PATH}" --version
 	ATOM_CI_DRY_RUN="" cmd "${APM_SCRIPT_PATH}"  --version --no-color
 	if [ $# -eq 0 ]; then return 0; fi
 	ATOM_CI_DRY_RUN="" cmd node --version
 	ATOM_CI_DRY_RUN="" cmd npm --version
-	endFold 'version-info'
 }
 
 # Install packages with `apm`

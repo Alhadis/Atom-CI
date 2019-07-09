@@ -6,9 +6,14 @@ title(){
 	printf >&2 '%s==>%s %s%s%s\n' "$2" "$4" "$3" "$1" "$4"
 }
 
+# Print a colourful shell-command prefixed by a "$ "
+cmdfmt(){
+	printf >&2 '%s$ %s%s\n' "`tput setaf 2`" "$*" "`tput sgr0`"
+}
+
 # Print a command before executing it
 cmd(){
-	printf >&2 '%s$ %s%s\n' "`tput setaf 2`" "$*" "`tput sgr0`"
+	cmdfmt "$*"
 	if [ "$ATOM_CI_DRY_RUN" ]; then return 0; fi # DEBUG
 	"$@"
 }
