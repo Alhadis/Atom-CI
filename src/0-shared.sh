@@ -97,7 +97,8 @@ scrapeDownloadURL(){
 	cleanHrefs \
 	| grep -oe ' href="[^"]*'"$1"'"' \
 	| sed -e 's/^ href="//; s/"$//' \
-	| sed -e 's|^/|https://github.com/|'
+	| sed -e 's|^/|https://github.com/|' \
+	| grep . || die 'Failed to extract download link'
 }
 
 # Retrieve the URL to download the latest stable release
