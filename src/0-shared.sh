@@ -20,6 +20,30 @@ die(){
 	exit ${2:-1}
 }
 
+# Emit an arbitrary byte-sequence to standard output
+putBytes(){
+	printf %b "`printf \\\\%03o "$@"`"
+}
+
+# Output a control-sequence introducer for an ANSI escape code
+csi(){
+	putBytes 27 91
+}
+
+# TravisCI: Begin a named folding region
+startFold(){
+	if [ ! "$TRAVIS_JOB_ID" ]; then return; fi
+	set -- "$1" "`csi`"
+	printf 'travis_fold:start:%s\r%s0K' "$1" "$2"
+}
+
+# TravisCI: Close a named folding region
+endFold(){
+	if [ ! "$TRAVIS_JOB_ID" ]; then return; fi
+	set -- "$1" "`csi`"
+	printf 'travis_fold:end:%s\r%s0K' "$1" "$2"
+}
+
 # Abort script if current directory lacks a test directory and package.json file
 assertValidProject(){
 	[ -f package.json ] || die 'No package.json file found'

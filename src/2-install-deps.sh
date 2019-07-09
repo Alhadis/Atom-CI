@@ -15,16 +15,20 @@ APM_SCRIPT_PATH=${APM_SCRIPT_PATH:=apm}
 
 # Display version info for Atom/Node/?PM
 showVersions(){
+	startFold 'version-info'
 	printf >&2 'Printing version info\n'
 	ATOM_CI_DRY_RUN="" cmd "${ATOM_SCRIPT_PATH}" --version
 	ATOM_CI_DRY_RUN="" cmd "${APM_SCRIPT_PATH}"  --version --no-color
 	if [ $# -eq 0 ]; then return 0; fi
 	ATOM_CI_DRY_RUN="" cmd node --version
 	ATOM_CI_DRY_RUN="" cmd npm --version
+	endFold 'version-info'
 }
 
 # Install packages with `apm`
 apmInstall(){
+	endFold 'installers'
+	startFold 'install-deps'
 	title 'Installing dependencies'
 	set -- "$1" "`tput smul`" "`tput rmul`"
 	if [ -f package-lock.json ]; then
@@ -37,6 +41,7 @@ apmInstall(){
 	fi
 }
 
+startFold 'installers'
 title 'Resolving installers'
 
 # Download using bundled version of Node
@@ -64,3 +69,5 @@ if [ "$APM_TEST_PACKAGES" ]; then
 		cmd "${APM_SCRIPT_PATH}" install "${pkg}"
 	done
 fi
+
+endFold 'install-deps'

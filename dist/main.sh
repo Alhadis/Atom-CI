@@ -20,6 +20,30 @@ die(){
 	exit ${2:-1}
 }
 
+# Emit an arbitrary byte-sequence to standard output
+putBytes(){
+	printf %b "`printf \\\\%03o "$@"`"
+}
+
+# Output a control-sequence introducer for an ANSI escape code
+csi(){
+	putBytes 27 91
+}
+
+# TravisCI: Begin a named folding region
+startFold(){
+	if [ ! "$TRAVIS_JOB_ID" ]; then return; fi
+	set -- "$1" "`csi`"
+	printf 'travis_fold:start:%s\r%s0K' "$1" "$2"
+}
+
+# TravisCI: Close a named folding region
+endFold(){
+	if [ ! "$TRAVIS_JOB_ID" ]; then return; fi
+	set -- "$1" "`csi`"
+	printf 'travis_fold:end:%s\r%s0K' "$1" "$2"
+}
+
 # Abort script if current directory lacks a test directory and package.json file
 assertValidProject(){
 	[ -f package.json ] || die 'No package.json file found'
@@ -118,6 +142,8 @@ mkalias(){
 
 assertValidProject
 
+startFold 'install-atom'
+
 # Verify that the requested channel is valid
 ATOM_CHANNEL=${ATOM_CHANNEL:=stable}
 case $ATOM_CHANNEL in
@@ -150,7 +176,6 @@ case `uname -s | tr A-Z a-z` in
 		PATH="${PATH}:${ATOM_PATH}/${ATOM_APP_NAME}/Contents/Resources/app/apm/node_modules/.bin"
 		export APM_SCRIPT_PATH ATOM_APP_NAME ATOM_PATH ATOM_SCRIPT_NAME ATOM_SCRIPT_PATH NPM_SCRIPT_PATH PATH
 		cmd ln -fs "$ATOM_SCRIPT_PATH" "${APM_SCRIPT_PATH%/*}/atom"
-		cmd env | sort
 	;;
 	
 	# Linux (Debian assumed)
@@ -192,25 +217,35 @@ case `uname -s | tr A-Z a-z` in
 			[ -f "${ATOM_PATH}/usr/bin/atom" ] || mkalias "${ATOM_PATH}/usr/bin/atom-beta" atom
 			[ -f "${ATOM_PATH}/usr/bin/apm"  ] || mkalias "${ATOM_PATH}/usr/bin/apm-beta" apm
 		fi
-		cmd env | sort
 	;;
 esac
+
+startFold 'env-dump'
+printf >&2 'Dumping environment variables\n'
+cmd env | sort
+endFold 'env-dump'
+
+endFold 'install-atom'
 
 ATOM_SCRIPT_PATH=${ATOM_SCRIPT_PATH:=atom}
 APM_SCRIPT_PATH=${APM_SCRIPT_PATH:=apm}
 
 # Display version info for Atom/Node/?PM
 showVersions(){
+	startFold 'version-info'
 	printf >&2 'Printing version info\n'
 	cmd "${ATOM_SCRIPT_PATH}" --version
 	cmd "${APM_SCRIPT_PATH}"  --version --no-color
 	if [ $# -eq 0 ]; then return 0; fi
 	cmd node --version
 	cmd npm --version
+	endFold 'version-info'
 }
 
 # Install packages with `apm`
 apmInstall(){
+	endFold 'installers'
+	startFold 'install-deps'
 	title 'Installing dependencies'
 	set -- "$1" "`tput smul`" "`tput rmul`"
 	if [ -f package-lock.json ]; then
@@ -223,6 +258,7 @@ apmInstall(){
 	fi
 }
 
+startFold 'installers'
 title 'Resolving installers'
 
 # Download using bundled version of Node
@@ -250,6 +286,8 @@ if [ "$APM_TEST_PACKAGES" ]; then
 		cmd "${APM_SCRIPT_PATH}" install "${pkg}"
 	done
 fi
+
+endFold 'install-deps'
 
 title 'Running tasks'
 

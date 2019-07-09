@@ -9,6 +9,8 @@ set -e
 . "${0%/*}"/0-shared.sh
 assertValidProject
 
+startFold 'install-atom'
+
 # Verify that the requested channel is valid
 ATOM_CHANNEL=${ATOM_CHANNEL:=stable}
 case $ATOM_CHANNEL in
@@ -41,7 +43,6 @@ case `uname -s | tr A-Z a-z` in
 		PATH="${PATH}:${ATOM_PATH}/${ATOM_APP_NAME}/Contents/Resources/app/apm/node_modules/.bin"
 		export APM_SCRIPT_PATH ATOM_APP_NAME ATOM_PATH ATOM_SCRIPT_NAME ATOM_SCRIPT_PATH NPM_SCRIPT_PATH PATH
 		cmd ln -fs "$ATOM_SCRIPT_PATH" "${APM_SCRIPT_PATH%/*}/atom"
-		cmd env | sort
 	;;
 	
 	# Linux (Debian assumed)
@@ -83,6 +84,12 @@ case `uname -s | tr A-Z a-z` in
 			[ -f "${ATOM_PATH}/usr/bin/atom" ] || mkalias "${ATOM_PATH}/usr/bin/atom-beta" atom
 			[ -f "${ATOM_PATH}/usr/bin/apm"  ] || mkalias "${ATOM_PATH}/usr/bin/apm-beta" apm
 		fi
-		cmd env | sort
 	;;
 esac
+
+startFold 'env-dump'
+printf >&2 'Dumping environment variables\n'
+cmd env | sort
+endFold 'env-dump'
+
+endFold 'install-atom'
