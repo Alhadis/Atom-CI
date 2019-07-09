@@ -120,19 +120,56 @@ getLatestBetaRelease(){
 	| scrapeDownloadURL "$2"
 }
 
-# Download the latest Atom release as a ZIP or Debian package
-# - Arguments: [release-type] [saved-filename]
-# - Example:   `downloadAtom beta atom-mac.zip`
-downloadAtom(){
-	case $1 in
-		beta)   set -- "`getLatestBetaRelease   atom/atom "$2"`" "$2" ;;
-		stable) set -- "`getLatestStableRelease atom/atom "$2"`" "$2" ;;
-		*)      die "Unsupported release type: $1"       ;;
-	esac
+# Retrieve the URL to download a specific release, specified by tag-name
+# - Arguments: [user/repo] [tag] [filename]
+# - Example:   `getReleaseByTag "atom/atom" "v1.25.0" "atom-mac.zip"`
+getReleaseByTag(){
+	set -- "https://github.com/$1/releases/tag/$2" "$3"
+	set -- "$1" "$2" "`curl -sSqL $1`"
+	if [ ! "$3" ]; then die "Release not found: `tput smul`$1`tput rmul`" 3; fi
+	printf %s "$3" | scrapeDownloadURL "$2"
+}
+
+# Download a file.
+# - Arguments: [url] [target-filename]
+download(){
 	printf >&2 'Downloading "%s" from %s%s%s\n' "$2" "`tput smul`" "$1" "`tput sgr0`"
 	if [ "$ATOM_CI_DRY_RUN" ]; then return 0; fi # DEBUG
 	cmd curl -#fqL -H 'Accept: application/octet-stream' -o "$2" "$1" \
-	|| die 'Failed to download Atom' $?
+	|| die 'Failed to download file' $?
+}
+
+# Download the latest release from a beta or stable channel.
+# - Arguments: [user/repo] [channel] [asset]
+# - Example:   `downloadByChannel "atom/atom" "beta" "atom-mac.zip"`
+downloadByChannel(){
+	case $2 in
+		beta)   set -- "`getLatestBetaRelease   "$1" "$3"`" "$3" ;;
+		stable) set -- "`getLatestStableRelease "$1" "$3"`" "$3" ;;
+		*)      die "Unsupported release channel: $2" ;;
+	esac
+	download "$1" "$2"
+}
+
+# Download a specific release, specified by tag/version-string.
+# - Arguments: [user/repo] [tag] [asset]
+# - Example:   `downloadByTag "atom/atom" "v1.25.0" "atom-mac.zip"`
+downloadByTag(){
+	set -- "`getReleaseByTag "$1" "$2" "$3"`" "$3"
+	download "$1" "$2"
+}
+
+# Download an Atom release
+# - Arguments: [asset-file] [channel] [tag]
+# - Examples:  `downloadAtom "atom-amd64.deb" "beta"`
+#              `downloadAtom "atom-amd64.deb" "" "v1.25.0"`
+downloadAtom(){
+	[ -f "$1" ]     && cmd rm -rf "$1"
+	[ -d .atom-ci ] && cmd rm -rf .atom-ci
+	if [ "$3" ];
+		then downloadByTag     atom/atom "$3" "$1" # Tag/version-string
+		else downloadByChannel atom/atom "$2" "$1" # Beta/stable channel
+	fi
 }
 
 # Create an "alias" of an executable that simply calls the source file

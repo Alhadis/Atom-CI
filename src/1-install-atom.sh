@@ -10,31 +10,36 @@ set -e
 assertValidProject
 startFold 'install-atom'
 
-# Verify that the requested channel is valid
-ATOM_CHANNEL=${ATOM_CHANNEL:=stable}
-case $ATOM_CHANNEL in
-	beta)   title 'Installing Atom (Latest beta release)'   ;;
-	stable) title 'Installing Atom (Latest stable release)' ;;
-	*)      die   'Unsupported channel: '"$ATOM_CHANNEL"'"' ;;
-esac
+# Building against a specific release
+if [ "$ATOM_RELEASE" ]; then
+	title "Installing Atom ($ATOM_RELEASE)"
+	case $ATOM_RELEASE in
+		*-beta*) ATOM_CHANNEL=beta   ;;
+		*)       ATOM_CHANNEL=stable ;;
+	esac
+else
+	# Verify that the requested channel is valid
+	ATOM_CHANNEL=${ATOM_CHANNEL:=stable}
+	case $ATOM_CHANNEL in
+		beta)   title 'Installing Atom (Latest beta release)'   ;;
+		stable) title 'Installing Atom (Latest stable release)' ;;
+		*)      die   'Unsupported channel: '"$ATOM_CHANNEL"'"' ;;
+	esac
+fi
 
 case `uname -s | tr A-Z a-z` in
 	# macOS
 	darwin)
-		set -- atom-mac.zip .atom-ci
-		[ -f "$1" ] && cmd rm -rf "$1"
-		[ -d "$2" ] && cmd rm -rf "$2"
-		downloadAtom "$ATOM_CHANNEL" "$1"
+		downloadAtom atom-mac.zip "$ATOM_CHANNEL" "$ATOM_RELEASE"
 		cmd mkdir .atom-ci
-		cmd unzip -q "$1" -d "$2"
+		cmd unzip -q atom-mac.zip -d .atom-ci
 		
 		if [ "$ATOM_CHANNEL" = beta ]; then
 			ATOM_APP_NAME='Atom Beta.app'
 		else
 			ATOM_APP_NAME='Atom.app'
 		fi
-		
-		ATOM_PATH="${PWD}/$2"
+		ATOM_PATH="${PWD}/.atom-ci"
 		ATOM_SCRIPT_NAME='atom.sh'
 		ATOM_SCRIPT_PATH="${ATOM_PATH}/${ATOM_APP_NAME}/Contents/Resources/app/atom.sh"
 		APM_SCRIPT_PATH="${ATOM_PATH}/${ATOM_APP_NAME}/Contents/Resources/app/apm/node_modules/.bin/apm"
@@ -46,11 +51,6 @@ case `uname -s | tr A-Z a-z` in
 	
 	# Linux (Debian assumed)
 	linux)
-		set -- atom-amd64.deb .atom-ci
-		[ -f "$1" ] && cmd rm -rf "$1"
-		[ -d "$2" ] && cmd rm -rf "$2"
-		downloadAtom "$ATOM_CHANNEL" "$1"
-		
 		cmd /sbin/start-stop-daemon \
 			--start \
 			--quiet \
@@ -61,10 +61,12 @@ case `uname -s | tr A-Z a-z` in
 			--exec /usr/bin/Xvfb \
 			-- :99 -ac -screen 0 1280x1024x16 \
 			|| die 'Unable to start Xvfb'
-		DISPLAY=:99; export DISPLAY
+		DISPLAY=:99
+		export DISPLAY
 		
-		ATOM_PATH="${PWD}/$2"
-		cmd dpkg-deb -x "$1" "$ATOM_PATH"
+		downloadAtom atom-amd64.deb "$ATOM_CHANNEL" "$ATOM_RELEASE"
+		ATOM_PATH="${PWD}/.atom-ci"
+		cmd dpkg-deb -x atom-amd64.deb "$ATOM_PATH"
 		
 		if [ "$ATOM_CHANNEL" = beta ]; then
 			ATOM_SCRIPT_NAME='atom-beta'

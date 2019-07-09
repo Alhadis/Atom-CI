@@ -74,7 +74,7 @@ you include `libgconf2-4` as a dependency:
 
 To-do list
 ----------
-*	[ ] **Support an `${ATOM_RELEASE}` environment variable to test specific releases**  
+*	[x] **Support an `${ATOM_RELEASE}` environment variable to test specific releases**  
 
 *	[ ] **Support the `atom-mocha` executable, once it can be run globally**  
 
