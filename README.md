@@ -4,14 +4,36 @@ Atom CI
 =======
 
 This is a script for setting up continuous integration with an Atom project.
+
+[![They're collapsible, baby.](preview.png)][Live-example]
+
+
+Usage
+-----
+Add the following line to your project's [`.travis.yml`][] file:
+
+~~~yaml
+script: "curl -sL https://git.io/fji1w | sh"
+~~~
+
+
+Features
+--------
 It's fundamentally the same as [`atom/ci`][], with the following differences:
 
 1.	__GitHub's release pages are consulted directly for downloads.__  
 	This is a tad bit slower than downloading from [`atom.io`][],
 	but it means sudden changes to their infrastructure won't break your build.
 
-2.	__Arbitrary release channels are unsupported.__  
-	Only `stable` and `beta` releases of Atom can be tested against.
+2.	__Arbitrary release channels (`dev`, `nightly`) are unsupported.__  
+	Only `stable` and `beta` releases of Atom can be tested against. However, users
+	can set `$ATOM_RELEASE` in their environment to build against an arbitrary Atom
+	version:
+	~~~yaml
+	env:
+	  - ATOM_CHANNEL=stable   # Latest stable release (default)
+	  - ATOM_RELEASE=v1.34.0  # Override ATOM_CHANNEL and test specific version
+	~~~
 
 3.	__Only [TravisCI][] is supported for now.__
 
@@ -44,15 +66,8 @@ It's fundamentally the same as [`atom/ci`][], with the following differences:
 	included, or else the build will fail.
 
 
-Usage
------
-Add the following line to your project's `.travis.yml` file:
-
-~~~yaml
-script: "curl -sL https://git.io/fji1w | sh"
-~~~
-
-__Note:__  
+Testing on Ubuntu
+-----------------
 If you're running builds on Ubuntu, be forewarned that Atom's beta channel may
 give `dpkg` an archive [it can't unpack](https://github.com/atom/ci/issues/94)
 due to [a bug](https://askubuntu.com/q/1065231/) with older versions of `dpkg`.
@@ -74,8 +89,6 @@ you include `libgconf2-4` as a dependency:
 
 To-do list
 ----------
-*	[x] **Support an `${ATOM_RELEASE}` environment variable to test specific releases**  
-
 *	[ ] **Support the `atom-mocha` executable, once it can be run globally**  
 
 *	[ ] **Learn PowerShell and write a version of this for [AppVeyor][]**  
@@ -109,6 +122,8 @@ submit a pull-request. So, as usual, I took things into my own hands.
 
 <!-- Referenced links -->
 [APIs]: https://developer.github.com/v3/repos/releases/
+[Live-example]: https://travis-ci.org/Alhadis/Atom-FormFeeds/jobs/556455405#L78
+[`.travis.yml`]: https://docs.travis-ci.com/user/tutorial
 [`atom/ci`]: https://github.com/atom/ci
 [`atom.io`]: https://atom.io/
 [TravisCI]: https://travis-ci.com/
