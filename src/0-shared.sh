@@ -83,7 +83,7 @@ cleanHrefs(){
 		bx
 	}
 	s/href=[[:blank:]]*'\''\([^'\'']*\)'\''/href="\1"/g
-	s/href=\([^"'\''[:blank:]][^"'\''[:blank:]]*\)/href="\1"/g
+	s/href=[[:blank:]]*\([^"'\''[:blank:]<>][^"'\''[:blank:]<>]*\)/href="\1"/g
 	s/href[[:blank:]]*=[[:blank:]]*"/href="/g
 	s/^href=/ href=/g
 	s/[[:blank:]]href=/ href=/g'
