@@ -29,7 +29,7 @@ apmInstall(){
 	startFold 'install-deps'
 	title 'Installing dependencies'
 	set -- "$1" "`tput smul`" "`tput rmul`"
-	if [ -f package-lock.json ]; then
+	if [ -f package-lock.json ] && apmHasCI; then
 		printf >&2 'Installing from %s%s%s\n' "$2" package-lock.json "$3"
 		cmd "${APM_SCRIPT_PATH}" ci $1
 	else
@@ -37,6 +37,23 @@ apmInstall(){
 		cmd "${APM_SCRIPT_PATH}" install $1
 		cmd "${APM_SCRIPT_PATH}" clean
 	fi
+}
+
+# Determine whether this version of APM supports the `ci`
+# subcommand, which was added in atom/apm@2a6dc13 (v2.1.0).
+apmHasCI(){
+	# shellcheck disable=SC2046
+	set -- `apm --version --no-color \
+	| grep -i apm \
+	| head -n1 \
+	| sed -e '
+		s/^[[:blank:]]*[Aa][Pp][Mm][[:blank:]]*[Vv]*//
+		s/[[:blank:]]*$//
+		s/+.*$//
+		s/-[-A-Za-z0-9.].*$//
+		s/$/.0.0.0.0/
+		s/^\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\).*$/\1 \2 \3/'`
+	[ "$1" -gt 2 ] || [ "$1" -eq 2 ] && [ "$2" -ge 1 ]
 }
 
 startFold 'installers'
