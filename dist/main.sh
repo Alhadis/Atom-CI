@@ -104,6 +104,18 @@ downloadAtom(){
 	|| die 'Failed to download Atom' $?
 }
 
+# Create an "alias" of an executable that simply calls the source file
+# with the same arguments. Necessary because `atom.sh` tries to be smart
+# about resolving symlinks and using $0 to determine the $CHANNEL (making
+# it impossible to symlink `atom-beta` as `atom` so scripts don't break).
+# - Arguments: [source-file] [alias-name]
+# - Example: mkalias ./usr/bin/atom-beta atom
+mkalias(){
+	set -- "${1##*/}" "${1%/*}/${2##*/}"
+	printf '#!/bin/sh\n"${0%%/*}"/%s "$@"\n' "$1" > "$2"
+	chmod +x "$2"
+}
+
 assertValidProject
 
 # Verify that the requested channel is valid
@@ -177,8 +189,8 @@ case `uname -s | tr A-Z a-z` in
 		export APM_SCRIPT_NAME APM_SCRIPT_PATH ATOM_SCRIPT_NAME ATOM_SCRIPT_PATH NPM_SCRIPT_PATH PATH
 		
 		if [ "$ATOM_CHANNEL" = beta ]; then
-			cmd ln -s "$ATOM_SCRIPT_PATH" "${ATOM_SCRIPT_PATH%-beta}"
-			cmd ln -s "$APM_SCRIPT_PATH"  "${APM_SCRIPT_PATH%-beta}"
+			[ -f "${ATOM_PATH}/usr/bin/atom" ] || mkalias "${ATOM_PATH}/usr/bin/atom-beta" atom
+			[ -f "${ATOM_PATH}/usr/bin/apm"  ] || mkalias "${ATOM_PATH}/usr/bin/apm-beta" apm
 		fi
 		cmd env | sort
 	;;

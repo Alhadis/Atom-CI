@@ -80,8 +80,8 @@ case `uname -s | tr A-Z a-z` in
 		export APM_SCRIPT_NAME APM_SCRIPT_PATH ATOM_SCRIPT_NAME ATOM_SCRIPT_PATH NPM_SCRIPT_PATH PATH
 		
 		if [ "$ATOM_CHANNEL" = beta ]; then
-			cmd ln -s "$ATOM_SCRIPT_PATH" "${ATOM_SCRIPT_PATH%-beta}"
-			cmd ln -s "$APM_SCRIPT_PATH"  "${APM_SCRIPT_PATH%-beta}"
+			[ -f "${ATOM_PATH}/usr/bin/atom" ] || mkalias "${ATOM_PATH}/usr/bin/atom-beta" atom
+			[ -f "${ATOM_PATH}/usr/bin/apm"  ] || mkalias "${ATOM_PATH}/usr/bin/apm-beta" apm
 		fi
 		cmd env | sort
 	;;

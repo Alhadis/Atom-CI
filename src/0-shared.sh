@@ -104,3 +104,16 @@ downloadAtom(){
 	cmd curl -#fqL -H 'Accept: application/octet-stream' -o "$2" "$1" \
 	|| die 'Failed to download Atom' $?
 }
+
+# Create an "alias" of an executable that simply calls the source file
+# with the same arguments. Necessary because `atom.sh` tries to be smart
+# about resolving symlinks and using $0 to determine the $CHANNEL (making
+# it impossible to symlink `atom-beta` as `atom` so scripts don't break).
+#
+# - Arguments: [source-file] [alias-name]
+# - Example: mkalias ./usr/bin/atom-beta atom
+mkalias(){
+	set -- "${1##*/}" "${1%/*}/${2##*/}"
+	printf '#!/bin/sh\n"${0%%/*}"/%s "$@"\n' "$1" > "$2"
+	chmod +x "$2"
+}
