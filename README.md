@@ -1,3 +1,5 @@
+<!-- -*- tab-width: 4; -*- vim: set ts=4 noet: -->
+
 Atom CI
 =======
 
@@ -11,7 +13,7 @@ It's fundamentally the same as [`atom/ci`][], with the following differences:
 2.	__Arbitrary release channels are unsupported.__  
 	Only `stable` and `beta` releases of Atom can be tested against.
 
-3.	__Only [TravisCI][] is supported.__
+3.	__Only [TravisCI][] is supported for now.__
 
 4.	__`lint` or `test` scripts defined in `package.json` are used, if possible.__  
 	If your package manifest defines a `lint` or `test` script, the CI script will
@@ -42,6 +44,34 @@ It's fundamentally the same as [`atom/ci`][], with the following differences:
 	included, or else the build will fail.
 
 
+Usage
+-----
+Add the following line to your project's `.travis.yml` file:
+
+~~~yaml
+script: "curl -sL https://git.io/fji1w | sh"
+~~~
+
+__Note:__  
+If you're running builds on Ubuntu, be forewarned that Atom's beta channel may
+give `dpkg` an archive [it can't unpack](https://github.com/atom/ci/issues/94)
+due to [a bug](https://askubuntu.com/q/1065231/) with older versions of `dpkg`.
+The solution is to run builds on Xenial instead of Trusty, which requires that
+you include `libgconf2-4` as a dependency:
+
+~~~diff
+@@ .travis.yml @@
+ addons:
+   apt:
+     packages:
+     - build-essential
+     - fakeroot
+     - git
++    - libgconf2-4
+     - libsecret-1-dev
+~~~
+
+
 To-do list
 ----------
 *	[ ] **Support an `${ATOM_RELEASE}` environment variable to test specific releases**  
@@ -68,7 +98,7 @@ curl: (22) The requested URL returned error: 406 Not Acceptable
 ~~~
 
 Following the URL simply lead to
-Atom's [releases page](`https://github.com/atom/atom/releases/latest`) on GitHub.
+Atom's [releases page](https://github.com/atom/atom/releases/latest) on GitHub.
 I was unsure what the link usually pointed to, but having this break the builds
 of each of my projects was certainly *not* the intended outcome.
 

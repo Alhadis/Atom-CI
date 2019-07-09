@@ -24,3 +24,16 @@ clean:
 	rm -f dist/*
 
 .PHONY: clean
+
+
+# Install Debian packages needed to run Atom headlessly
+apt-install:
+	sudo apt-get install \
+		build-essential \
+		fakeroot \
+		git \
+		libgconf2-4 \
+		libsecret-1-dev \
+		xvfb \
+		libxss1 \
+		libnss3
