@@ -101,19 +101,14 @@ scrapeDownloadURL(){
 	| grep . || die 'Failed to extract download link'
 }
 
-# Retrieve the URL to download the latest stable release
-# - Arguments: [user/repo] [filename]
-getLatestStableRelease(){
-	curl -sSqL "https://github.com/$1/releases/latest" | scrapeDownloadURL "$2"
-}
-
-# Retrieve the URL to download the latest beta release
-# - Arguments: [user/repo] [filename]
-getLatestBetaRelease(){
+# Retrieve the URL to download the latest release
+# - Arguments: [user/repo] [filename] [use-beta]?
+getLatestRelease(){
+	[ "$3" ] && set -- "$1" "$2" '' || set -- "$1" "$2" v
 	curl -sSqL "https://github.com/$1/releases.atom" \
 	| cleanHrefs \
 	| grep -oe ' href="[^"]*/releases/tag/[^"]*"' \
-	| grep -e '.-beta' \
+	| grep -$3e '.-beta' \
 	| head -n1 \
 	| sed -e 's/ href="//; s/"$//' \
 	| xargs curl -sSqL \
@@ -143,8 +138,8 @@ download(){
 # - Example:   `downloadByChannel "atom/atom" "beta" "atom-mac.zip"`
 downloadByChannel(){
 	case $2 in
-		beta)   set -- "`getLatestBetaRelease   "$1" "$3"`" "$3" ;;
-		stable) set -- "`getLatestStableRelease "$1" "$3"`" "$3" ;;
+		beta)   set -- "`getLatestRelease "$1" "$3"`" 1 ;;
+		stable) set -- "`getLatestRelease "$1" "$3"`" ;;
 		*)      die "Unsupported release channel: $2" ;;
 	esac
 	download "$1" "$2"
