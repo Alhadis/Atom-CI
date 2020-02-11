@@ -139,10 +139,12 @@ download(){
 # - Example:   `downloadByChannel "atom/atom" "beta" "atom-mac.zip"`
 downloadByChannel(){
 	case $2 in
-		beta)   set -- "`getLatestRelease "$1" "$3"`" 1 ;;
-		stable) set -- "`getLatestRelease "$1" "$3"`" ;;
+		beta)   set -- "`getLatestRelease "$1" "$3" 1`" "$3" ;;
+		stable) set -- "`getLatestRelease "$1" "$3"`"   "$3" ;;
 		*)      die "Unsupported release channel: $2" ;;
 	esac
+	[ "$1" ] || die 'Failed to retrieve URL'
+	[ "$2" ] || die 'Missing filename'
 	download "$1" "$2"
 }
 
