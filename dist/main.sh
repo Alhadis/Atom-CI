@@ -261,10 +261,14 @@ case `uname -s | tr A-Z a-z` in
 	;;
 esac
 
-startFold 'env-dump'
-cmdfmt 'env | sort'
-env | sort
-endFold 'env-dump'
+# List environment variables if it's safe to do so
+if [ "$TRAVIS_JOB_ID" ] || [ "$ATOM_CI_DUMP_ENV" ]; then
+	startFold 'env-dump'
+	cmdfmt "env | sort"
+	# Avoid using `env | sort`; some variables (i.e., $TRAVIS_COMMIT_MESSAGE) may contain newlines
+	node -p 'Object.keys(process.env).sort().map(x => x + "=" + process.env[x]).join("\n")'
+	endFold 'env-dump'
+fi
 
 endFold 'install-atom'
 
