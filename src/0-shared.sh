@@ -3,12 +3,12 @@
 # Print a colourful "==> $1"
 title(){
 	set -- "$1" "`sgr 34`" "`sgr 1`" "`sgr`"
-	printf >&2 '%s==>%s %s%s%s\n' "$2" "$4" "$3" "$1" "$4"
+	printf '%s==>%s %s%s%s\n' "$2" "$4" "$3" "$1" "$4"
 }
 
 # Print a colourful shell-command prefixed by a "$ "
 cmdfmt(){
-	printf >&2 '%s$ %s%s\n' "`sgr 32`" "$*" "`sgr`"
+	printf '%s$ %s%s\n' "`sgr 32`" "$*" "`sgr`"
 }
 
 # Print a command before executing it
@@ -21,7 +21,7 @@ cmd(){
 # Terminate execution with an error message
 die(){
 	set -- "$1" "$2" "`sgr 1`" "`sgr 31`" "`sgr`"
-	printf >&2 '%s%sfatal:%s%s %s%s\n' "$3" "$4" "$5" "$4" "$1" "$5"
+	printf '%s%sfatal:%s%s %s%s\n' "$3" "$4" "$5" "$4" "$1" "$5"
 	exit ${2:-1}
 }
 
@@ -146,7 +146,7 @@ getReleaseByTag(){
 # Download a file.
 # - Arguments: [url] [target-filename]
 download(){
-	printf >&2 'Downloading "%s" from %s%s%s\n' "$2" "`sgr 4`" "$1" "`sgr`"
+	printf 'Downloading "%s" from %s%s%s\n' "$2" "`sgr 4`" "$1" "`sgr`"
 	if [ "$ATOM_CI_DRY_RUN" ]; then return 0; fi # DEBUG
 	cmd curl -#fqL -H 'Accept: application/octet-stream' -o "$2" "$1" \
 	|| die 'Failed to download file' $?

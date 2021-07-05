@@ -15,7 +15,7 @@ APM_SCRIPT_PATH=${APM_SCRIPT_PATH:=apm}
 
 # Display version info for Atom/Node/?PM
 showVersions(){
-	printf >&2 'Printing version info\n'
+	printf 'Printing version info\n'
 	ATOM_CI_DRY_RUN="" cmd "${ATOM_SCRIPT_PATH}" --version
 	ATOM_CI_DRY_RUN="" cmd "${APM_SCRIPT_PATH}"  --version --no-color
 	if [ $# -eq 0 ]; then return 0; fi
@@ -29,10 +29,10 @@ apmInstall(){
 	startFold 'install-deps' 'Installing dependencies'
 	set -- "$1" "`sgr 4`" "`sgr 24`"
 	if [ -f package-lock.json ] && apmHasCI; then
-		printf >&2 'Installing from %s%s%s\n' "$2" package-lock.json "$3"
+		printf 'Installing from %s%s%s\n' "$2" package-lock.json "$3"
 		cmd "${APM_SCRIPT_PATH}" ci $1
 	else
-		printf >&2 'Installing from %s%s%s\n' "$2" package.json "$3"
+		printf 'Installing from %s%s%s\n' "$2" package.json "$3"
 		cmd "${APM_SCRIPT_PATH}" install $1
 		cmd "${APM_SCRIPT_PATH}" clean
 	fi
@@ -60,7 +60,7 @@ title 'Resolving installers'
 
 # Download using bundled version of Node
 if [ "${ATOM_LINT_WITH_BUNDLED_NODE:=true}" = true ]; then
-	printf >&2 'Using bundled version of Node\n'
+	printf 'Using bundled version of Node\n'
 	showVersions
 	apmInstall
 	case `uname -s | tr A-Z a-z` in
@@ -71,7 +71,7 @@ if [ "${ATOM_LINT_WITH_BUNDLED_NODE:=true}" = true ]; then
 
 # Download using system's version of NPM
 else
-	printf >&2 'Using system versions of Node/NPM\n'
+	printf 'Using system versions of Node/NPM\n'
 	NPM_SCRIPT_PATH='npm'; export NPM_SCRIPT_PATH
 	showVersions --all
 	apmInstall --production

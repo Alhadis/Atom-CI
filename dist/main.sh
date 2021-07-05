@@ -4,12 +4,12 @@ set -e
 # Print a colourful "==> $1"
 title(){
 	set -- "$1" "`sgr 34`" "`sgr 1`" "`sgr`"
-	printf >&2 '%s==>%s %s%s%s\n' "$2" "$4" "$3" "$1" "$4"
+	printf '%s==>%s %s%s%s\n' "$2" "$4" "$3" "$1" "$4"
 }
 
 # Print a colourful shell-command prefixed by a "$ "
 cmdfmt(){
-	printf >&2 '%s$ %s%s\n' "`sgr 32`" "$*" "`sgr`"
+	printf '%s$ %s%s\n' "`sgr 32`" "$*" "`sgr`"
 }
 
 # Print a command before executing it
@@ -21,7 +21,7 @@ cmd(){
 # Terminate execution with an error message
 die(){
 	set -- "$1" "$2" "`sgr 1`" "`sgr 31`" "`sgr`"
-	printf >&2 '%s%sfatal:%s%s %s%s\n' "$3" "$4" "$5" "$4" "$1" "$5"
+	printf '%s%sfatal:%s%s %s%s\n' "$3" "$4" "$5" "$4" "$1" "$5"
 	exit ${2:-1}
 }
 
@@ -146,7 +146,7 @@ getReleaseByTag(){
 # Download a file.
 # - Arguments: [url] [target-filename]
 download(){
-	printf >&2 'Downloading "%s" from %s%s%s\n' "$2" "`sgr 4`" "$1" "`sgr`"
+	printf 'Downloading "%s" from %s%s%s\n' "$2" "`sgr 4`" "$1" "`sgr`"
 	cmd curl -#fqL -H 'Accept: application/octet-stream' -o "$2" "$1" \
 	|| die 'Failed to download file' $?
 }
@@ -345,7 +345,7 @@ APM_SCRIPT_PATH=${APM_SCRIPT_PATH:=apm}
 
 # Display version info for Atom/Node/?PM
 showVersions(){
-	printf >&2 'Printing version info\n'
+	printf 'Printing version info\n'
 	cmd "${ATOM_SCRIPT_PATH}" --version
 	cmd "${APM_SCRIPT_PATH}"  --version --no-color
 	if [ $# -eq 0 ]; then return 0; fi
@@ -359,10 +359,10 @@ apmInstall(){
 	startFold 'install-deps' 'Installing dependencies'
 	set -- "$1" "`sgr 4`" "`sgr 24`"
 	if [ -f package-lock.json ] && apmHasCI; then
-		printf >&2 'Installing from %s%s%s\n' "$2" package-lock.json "$3"
+		printf 'Installing from %s%s%s\n' "$2" package-lock.json "$3"
 		cmd "${APM_SCRIPT_PATH}" ci $1
 	else
-		printf >&2 'Installing from %s%s%s\n' "$2" package.json "$3"
+		printf 'Installing from %s%s%s\n' "$2" package.json "$3"
 		cmd "${APM_SCRIPT_PATH}" install $1
 		cmd "${APM_SCRIPT_PATH}" clean
 	fi
@@ -390,7 +390,7 @@ title 'Resolving installers'
 
 # Download using bundled version of Node
 if [ "${ATOM_LINT_WITH_BUNDLED_NODE:=true}" = true ]; then
-	printf >&2 'Using bundled version of Node\n'
+	printf 'Using bundled version of Node\n'
 	showVersions
 	apmInstall
 	case `uname -s | tr A-Z a-z` in
@@ -401,7 +401,7 @@ if [ "${ATOM_LINT_WITH_BUNDLED_NODE:=true}" = true ]; then
 
 # Download using system's version of NPM
 else
-	printf >&2 'Using system versions of Node/NPM\n'
+	printf 'Using system versions of Node/NPM\n'
 	NPM_SCRIPT_PATH='npm'; export NPM_SCRIPT_PATH
 	showVersions --all
 	apmInstall --production
@@ -428,7 +428,7 @@ if haveScript lint; then
 else
 	for linter in coffeelint eslint tslint; do
 		haveDep $linter || continue
-		printf >&2 'Linting package with %s...\n' "$linter"
+		printf 'Linting package with %s...\n' "$linter"
 		for dir in lib src spec test; do
 			if [ -d $dir ]; then
 				cmd npx $linter ./$dir || exit $?
@@ -443,7 +443,7 @@ if haveScript test; then
 else
 	for dir in spec specs test tests; do
 		if [ -d $dir ]; then
-			printf >&2 'Running specs...\n'
+			printf 'Running specs...\n'
 			cmd "${ATOM_SCRIPT_PATH}" --test "./$dir" || exit $?
 			break;
 		fi
