@@ -39,7 +39,7 @@ steps:
     run: curl -sL https://git.io/fji1w | sh
 ~~~
 
-A more complete—and working—workflow example can be found [here](`.github/workflows/ci.yml`).
+A more complete workflow example can be found [here](`.github/workflows/ci.yml`).
 
 </dd></dt>
 
