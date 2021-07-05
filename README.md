@@ -11,11 +11,37 @@ This is a script for setting up continuous integration with an Atom project.
 
 Usage
 -----
+Run the following command:
+
+~~~sh
+curl -sL https://git.io/fji1w | sh
+~~~
+
+This should work on any Unix-like system, irrespective of whether it's invoked by a CI server or directly from your terminal.
+**Note that Windows is _not_ currently supported<!-- TODO: (see [below][Windows] for a workaround) -->.**
+
+
+<dl><dt><a name="travis-ci" href="https://travis-ci.com">Travis CI</a></dt><dd>
+
 Add the following line to your project's [`.travis.yml`][] file:
 
 ~~~yaml
-script: "curl -sL https://git.io/fji1w | sh"
+script: curl -sL https://git.io/fji1w | sh
 ~~~
+
+</dd><dt><a name="github-actions" href="https://docs.github.com/en/actions/reference">GitHub Actions</a></dt><dd>
+
+Add a step to your project's workflow to execute the aforementioned command:
+
+~~~yaml
+steps:
+  - name: Run package tests
+    run: curl -sL https://git.io/fji1w | sh
+~~~
+
+A more complete—and working—workflow example can be found [here](`.github/workflows/ci.yml`).
+
+</dd></dt>
 
 
 Features
@@ -36,7 +62,7 @@ It's fundamentally the same as [`atom/ci`][], with the following differences:
 	  - ATOM_RELEASE=v1.34.0  # Override ATOM_CHANNEL and test specific version
 	~~~
 
-3.	__Only [TravisCI][] is supported for now.__
+3.	__Only [Travis CI][] and [GitHub Actions][] are supported for now.__
 
 4.	__`lint` or `test` scripts defined in `package.json` are used, if possible.__  
 	If your package manifest defines a `lint` or `test` script, the CI script will
@@ -92,6 +118,8 @@ To-do list
 ----------
 *	[ ] **Support the `atom-mocha` executable, once it can be run globally**  
 
+*   [ ] **Support nested groups in GitHub Actions, if/when it becomes possible**
+
 *	[ ] **Learn PowerShell and write a version of this for [AppVeyor][]**  
 	Not a huge priority at the moment, as the AppVeyor integration provided
 	by [`atom/ci`][] is currently working fine.
@@ -129,5 +157,6 @@ submit a pull-request. So, as usual, I took things into my own hands.
 [`.travis.yml`]: https://docs.travis-ci.com/user/tutorial
 [`atom/ci`]: https://github.com/atom/ci
 [`atom.io`]: https://atom.io/
-[TravisCI]: https://travis-ci.com/
+[Travis CI]: https://travis-ci.com/
 [AppVeyor]: https://appveyor.com/
+[GitHub Actions]: https://docs.github.com/en/actions/reference

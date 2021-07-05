@@ -8,7 +8,6 @@ set -e
 # shellcheck source=./0-shared.sh
 . "${0%/*}"/0-shared.sh
 assertValidProject
-startFold 'install-atom'
 
 # Building against a specific release
 if [ "$ATOM_RELEASE" ]; then
@@ -21,9 +20,9 @@ else
 	# Verify that the requested channel is valid
 	ATOM_CHANNEL=${ATOM_CHANNEL:=stable}
 	case $ATOM_CHANNEL in
-		beta)   title 'Installing Atom (Latest beta release)'   ;;
-		stable) title 'Installing Atom (Latest stable release)' ;;
-		*)      die   'Unsupported channel: '"$ATOM_CHANNEL"'"' ;;
+		beta)   startFold 'install-atom' 'Installing Atom (Latest beta release)'   ;;
+		stable) startFold 'install-atom' 'Installing Atom (Latest stable release)' ;;
+		*)      die                      'Unsupported channel: '"$ATOM_CHANNEL"'"' ;;
 	esac
 fi
 
@@ -89,8 +88,8 @@ case `uname -s | tr A-Z a-z` in
 esac
 
 # List environment variables if it's safe to do so
-if [ "$TRAVIS_JOB_ID" ] || [ "$ATOM_CI_DUMP_ENV" ]; then
-	startFold 'env-dump'
+if [ "$TRAVIS_JOB_ID" ] || [ "$GITHUB_ACTIONS" ] || [ "$ATOM_CI_DUMP_ENV" ]; then
+	startFold 'env-dump' 'Dumping environment variables'
 	cmdfmt "env | sort"
 	# Avoid using `env | sort`; some variables (i.e., $TRAVIS_COMMIT_MESSAGE) may contain newlines
 	node -p 'Object.keys(process.env).sort().map(x => x + "=" + process.env[x]).join("\n")'

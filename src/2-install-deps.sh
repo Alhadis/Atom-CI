@@ -26,9 +26,8 @@ showVersions(){
 # Install packages with `apm`
 apmInstall(){
 	endFold 'installers'
-	startFold 'install-deps'
-	title 'Installing dependencies'
-	set -- "$1" "`tput smul`" "`tput rmul`"
+	startFold 'install-deps' 'Installing dependencies'
+	set -- "$1" "`sgr 4`" "`sgr 24`"
 	if [ -f package-lock.json ] && apmHasCI; then
 		printf >&2 'Installing from %s%s%s\n' "$2" package-lock.json "$3"
 		cmd "${APM_SCRIPT_PATH}" ci $1

@@ -2,13 +2,13 @@
 
 # Print a colourful "==> $1"
 title(){
-	set -- "$1" "`tput setaf 4`" "`tput bold`" "`tput sgr0`"
+	set -- "$1" "`sgr 34`" "`sgr 1`" "`sgr`"
 	printf >&2 '%s==>%s %s%s%s\n' "$2" "$4" "$3" "$1" "$4"
 }
 
 # Print a colourful shell-command prefixed by a "$ "
 cmdfmt(){
-	printf >&2 '%s$ %s%s\n' "`tput setaf 2`" "$*" "`tput sgr0`"
+	printf >&2 '%s$ %s%s\n' "`sgr 32`" "$*" "`sgr`"
 }
 
 # Print a command before executing it
@@ -20,7 +20,7 @@ cmd(){
 
 # Terminate execution with an error message
 die(){
-	set -- "$1" "$2" "`tput bold`" "`tput setaf 1`" "`tput sgr0`"
+	set -- "$1" "$2" "`sgr 1`" "`sgr 31`" "`sgr`"
 	printf >&2 '%s%sfatal:%s%s %s%s\n' "$3" "$4" "$5" "$4" "$1" "$5"
 	exit ${2:-1}
 }
@@ -30,23 +30,41 @@ putBytes(){
 	printf %b "`printf \\\\%03o "$@"`"
 }
 
-# Output a control-sequence introducer for an ANSI escape code
-csi(){
-	putBytes 27 91
-}
+# Colon-delimited list of currently-open folds
+foldStack=
 
-# TravisCI: Begin a named folding region
+# Begin a collapsible folding region
+# - Arguments: [id] [label]?
 startFold(){
-	if [ ! "$TRAVIS_JOB_ID" ]; then return; fi
-	set -- "$1" "`csi`"
-	printf 'travis_fold:start:%s\r%s0K' "$1" "$2"
+	if [ "$TRAVIS_JOB_ID" ]; then
+		printf 'travis_fold:start:%s\r\033[0K' "$1"
+	elif [ "$GITHUB_ACTIONS" ]; then
+		set -- "$1" "${2:-$1}"
+		set -- "`printf %s "$1" | sed s/:/꞉/g`" "$2"
+		foldStack="$1:$foldStack"
+		
+		# FIXME: GitHub Actions don't support nested groups. Degrade gracefully.
+		case $foldStack in *:*:*) title "$2" ;; *) printf '::group::%s\n' "$2" ;; esac
+		
+		return
+	fi
+	[ -z "$2" ] || title "$2"
 }
 
-# TravisCI: Close a named folding region
+# Close a named folding region
+# - Arguments: [id]?
 endFold(){
-	if [ ! "$TRAVIS_JOB_ID" ]; then return; fi
-	set -- "$1" "`csi`"
-	printf 'travis_fold:end:%s\r%s0K' "$1" "$2"
+	if [ "$TRAVIS_JOB_ID" ]; then
+		printf 'travis_fold:end:%s\r\033[0K' "$1"
+	elif [ "$GITHUB_ACTIONS" ]; then
+		[ $# -gt 0 ] || set -- "${foldStack%%:*}"
+		while [ "$foldStack" ] && [ ! "$1" = "${foldStack%%:*}" ]; do
+			set -- "${foldStack%%:*}"
+			foldStack="${foldStack#*:}"
+			# FIXME: Same issue/limitation as `startFold()`
+			case $foldStack in *:*) ;; *) printf '::endgroup::\n' ;; esac
+		done
+	fi
 }
 
 # Abort script if current directory lacks a test directory and package.json file
@@ -121,14 +139,14 @@ getLatestRelease(){
 getReleaseByTag(){
 	set -- "https://github.com/$1/releases/tag/$2" "$3"
 	set -- "$1" "$2" "`curl -sSqL $1`"
-	if [ ! "$3" ]; then die "Release not found: `tput smul`$1`tput rmul`" 3; fi
+	if [ ! "$3" ]; then die "Release not found: `sgr 4`$1`sgr 24`" 3; fi
 	printf %s "$3" | scrapeDownloadURL "$2"
 }
 
 # Download a file.
 # - Arguments: [url] [target-filename]
 download(){
-	printf >&2 'Downloading "%s" from %s%s%s\n' "$2" "`tput smul`" "$1" "`tput sgr0`"
+	printf >&2 'Downloading "%s" from %s%s%s\n' "$2" "`sgr 4`" "$1" "`sgr`"
 	if [ "$ATOM_CI_DRY_RUN" ]; then return 0; fi # DEBUG
 	cmd curl -#fqL -H 'Accept: application/octet-stream' -o "$2" "$1" \
 	|| die 'Failed to download file' $?
@@ -180,4 +198,57 @@ mkalias(){
 	set -- "${1##*/}" "${1%/*}/${2##*/}"
 	printf '#!/bin/sh\n"${0%%/*}"/%s "$@"\n' "$1" > "$2"
 	chmod +x "$2"
+}
+
+# Emit an ANSI escape sequence to style console output.
+# - Arguments: [sgr-id...]
+# - Example:   `sgr 34 22`   => "\033[34;22m"
+#              `sgr 38 5 10` => "\033[38;5;10m"
+# Side-notes:
+#   This function honours http://no-color.org/: if the `$NO_COLOR` environment
+#   variable exists, this function becomes a no-op. Two extensions to the spec
+#   are also provided by the function:
+#
+#    1. The alternative spelling `$NO_COLOUR` is accepted if the US variant
+#       is not defined in the environment.
+#
+#    2. The variable `$FORCE_COLOR` (or `$FORCE_COLOUR`) overrides `$NO_COLOR`
+#       if set to the numbers 1, 2, 3, the string "true", or the empty string.
+#       Any other value causes colours to be disabled. This logic matches that
+#       of Node.js (sans `NODE_DISABLE_COLORS` support); see node(1).
+sgr(){
+	# Treat no arguments as shorthand for `sgr 0`
+	[ $# -gt 0 ] || set -- 0
+
+	# Resolve FORCE_COLOUR variable
+	if   [ ! -z "${FORCE_COLOR+1}"  ]; then set -- FORCE_COLOR  "$@"
+	elif [ ! -z "${FORCE_COLOUR+1}" ]; then set -- FORCE_COLOUR "$@"
+	else                                    set -- ""           "$@"
+	fi
+
+	# Resolve colour depth, if forced
+	if [ "$1" ]; then
+		case `eval "echo \"\\$$1\""` in
+			''|1|true) shift; set -- 0 16       "$@" ;; # 16-colour support
+			2)         shift; set -- 0 256      "$@" ;; # 256-colour support
+			3)         shift; set -- 0 16000000 "$@" ;; # 16-million (“true colour”) support
+			*)         shift; set -- 1 0        "$@" ;; # Invalid value; disable colours
+		esac
+	else
+		# Resolve NO_COLOUR variable
+		if   [ ! -z "${NO_COLOR+1}"  ]; then set -- 1 "$@"
+		elif [ ! -z "${NO_COLOUR+1}" ]; then set -- 1 "$@"
+		else                                 set -- 0 "$@"
+		fi
+	fi
+
+	# Do nothing if colours are suppressed
+	[ "$1" = 1 ] && return || shift
+
+	# IDEA: Gatekeep colour resolution based on forced colour depth; i.e., 16-colour
+	# mode causes `38;5;10` (bright green) to degrade into `32` (ordinary green).
+	shift
+
+	# Generate the final sequence
+	printf '\033[%sm' "$*" | sed 's/  */;/g'
 }
