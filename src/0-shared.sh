@@ -93,7 +93,7 @@ startFold(){
 	elif [ "$GITHUB_ACTIONS" ]; then
 		set -- "$1" "${2:-$1}"
 		set -- "`printf %s "$1" | sed s/:/꞉/g`" "$2"
-		foldStack="$1:$foldStack"
+		foldStack="$foldStack:$1"
 		
 		# FIXME: GitHub Actions doesn't support nested groups; degrade gracefully instead
 		case $foldStack in *:*:*) title "$2" ;; *) printf '::group::%s\n' "$2" ;; esac
@@ -108,13 +108,26 @@ startFold(){
 endFold(){
 	if [ "$TRAVIS_JOB_ID" ]; then
 		printf 'travis_fold:end:%s\r\033[0K' "$1"
+
 	elif [ "$GITHUB_ACTIONS" ]; then
-		[ $# -gt 0 ] || set -- "${foldStack%%:*}"
-		while [ "$foldStack" ] && [ ! "$1" = "${foldStack%%:*}" ]; do
-			set -- "${foldStack%%:*}"
-			foldStack="${foldStack#*:}"
+		# Verify that the named fold exists, but don't return an error-code:
+		# folding is a cosmetic feature that's worth breaking a build over.
+		if [ $# -gt 0 ]; then
+			case $foldStack in
+				"$1"|"$1:"*|*":$1"|*":$1:"*) ;;
+				*) printf >&2 'No such fold: %s\n' "$1"; return ;;
+			esac
+
+		# If no name was passed, default to whatever fold was most recently opened
+		else set -- "${foldStack##*:}"; fi
+
+		while [ "$foldStack" ]; do
+			set -- "$1" "${foldStack##*:}"
+			foldStack=${foldStack%:$2}
+
 			# FIXME: Same issue/limitation as `startFold()`
 			case $foldStack in *:*) ;; *) printf '::endgroup::\n' ;; esac
+			[ ! "$1" = "$2" ] || break
 		done
 	fi
 }
