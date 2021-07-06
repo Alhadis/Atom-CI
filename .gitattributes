@@ -1,2 +1,2 @@
-dist/* -diff linguist-generated=true
-test/* linguist-vendored=true
+dist/* -diff linguist-generated
+test/* linguist-vendored
