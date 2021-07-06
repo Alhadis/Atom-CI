@@ -37,3 +37,11 @@ apt-install:
 		xvfb \
 		libxss1 \
 		libnss3
+
+
+# Regenerate concatenated script when source files are modified
+watch:
+	watchman watch .
+	watchman -- trigger . join 'src/*.sh' -- make dist/main.sh
+
+.PHONY: watch
