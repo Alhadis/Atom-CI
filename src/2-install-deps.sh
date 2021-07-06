@@ -55,8 +55,7 @@ apmHasCI(){
 	[ "$1" -gt 2 ] || [ "$1" -eq 2 ] && [ "$2" -ge 1 ]
 }
 
-startFold 'installers'
-title 'Resolving installers'
+startFold 'installers' 'Resolving installers'
 
 # Download using bundled version of Node
 if [ "${ATOM_LINT_WITH_BUNDLED_NODE:=true}" = true ]; then
