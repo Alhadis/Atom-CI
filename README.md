@@ -152,7 +152,7 @@ submit a pull-request. So, as usual, I took things into my own hands.
 
 <!-- Referenced links -->
 [APIs]: https://developer.github.com/v3/repos/releases/
-[Live-example]: https://travis-ci.org/Alhadis/Atom-FormFeeds/jobs/556455405#L78
+[Live-example]:   https://app.travis-ci.com/github/Alhadis/Atom-FormFeeds/jobs/523013011#L80
 [Actions-badge]:  https://img.shields.io/github/workflow/status/Alhadis/Atom-CI/Atom%20CI?label=GitHub%20Actions&logo=github
 [Actions-link]:   https://github.com/Alhadis/Atom-CI/actions
 [TravisCI-badge]: https://img.shields.io/travis/com/Alhadis/Atom-CI?label=Travis%20CI&logo=travis
