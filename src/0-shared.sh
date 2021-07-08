@@ -126,7 +126,7 @@ endFold(){
 			foldStack=${foldStack%:$2}
 
 			# FIXME: Same issue/limitation as `startFold()`
-			case $foldStack in *:*) ;; *) printf '::endgroup::\n' ;; esac
+			case $foldStack in *:*) ;; *) printf '\n::endgroup::\n' ;; esac
 			[ ! "$1" = "$2" ] || break
 		done
 	fi
