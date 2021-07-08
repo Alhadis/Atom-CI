@@ -113,7 +113,7 @@ endFold(){
 		if [ $# -gt 0 ]; then
 			case $foldStack in
 				"$1"|"$1:"*|*":$1"|*":$1:"*) ;;
-				*) printf >&2 'No such fold: %s\n' "$1"; return ;;
+				*) printf 'No such fold: %s\n' "$1"; return ;;
 			esac
 
 		# If no name was passed, default to whatever fold was most recently opened
@@ -124,7 +124,7 @@ endFold(){
 			foldStack=${foldStack%:$2}
 
 			# FIXME: Same issue/limitation as `startFold()`
-			case $foldStack in *:*) ;; *) printf '\n::endgroup::\n' ;; esac
+			case $foldStack in *:*) ;; *) printf '::endgroup::\n' ;; esac
 			[ ! "$1" = "$2" ] || break
 		done
 	fi
@@ -369,14 +369,14 @@ showVersions(){
 apmInstall(){
 	endFold 'installers'
 	startFold 'install-deps' 'Installing dependencies'
-	set -- "$1" "`sgr 4`" "`sgr 24`"
+	set -- "$1" "`sgr 4`" "`sgr 24`" '/✓$/{N;s/\n//;s/$/\n/;}'
 	if [ -f package-lock.json ] && apmHasCI; then
 		printf 'Installing from %s%s%s\n' "$2" package-lock.json "$3"
-		cmd "${APM_SCRIPT_PATH}" ci $1
+		cmd "${APM_SCRIPT_PATH}" ci $1 | sed "$4"
 	else
 		printf 'Installing from %s%s%s\n' "$2" package.json "$3"
 		cmd "${APM_SCRIPT_PATH}" install $1
-		cmd "${APM_SCRIPT_PATH}" clean
+		cmd "${APM_SCRIPT_PATH}" clean | sed "$4"
 	fi
 }
 

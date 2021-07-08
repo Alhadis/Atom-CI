@@ -115,7 +115,7 @@ endFold(){
 		if [ $# -gt 0 ]; then
 			case $foldStack in
 				"$1"|"$1:"*|*":$1"|*":$1:"*) ;;
-				*) printf >&2 'No such fold: %s\n' "$1"; return ;;
+				*) printf 'No such fold: %s\n' "$1"; return ;;
 			esac
 
 		# If no name was passed, default to whatever fold was most recently opened
@@ -126,7 +126,7 @@ endFold(){
 			foldStack=${foldStack%:$2}
 
 			# FIXME: Same issue/limitation as `startFold()`
-			case $foldStack in *:*) ;; *) printf '\n::endgroup::\n' ;; esac
+			case $foldStack in *:*) ;; *) printf '::endgroup::\n' ;; esac
 			[ ! "$1" = "$2" ] || break
 		done
 	fi
