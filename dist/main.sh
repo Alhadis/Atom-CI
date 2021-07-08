@@ -280,6 +280,11 @@ else
 	esac
 fi
 
+# GitHub Actions: Force 16-colour support unless explicitly disabled
+if [ "$GITHUB_ACTIONS" ] && [ ! "${NO_COLOR+1}${NO_COLOUR+2}" ]; then
+	export FORCE_COLOR=1
+fi
+
 case `uname -s | tr A-Z a-z` in
 	# macOS
 	darwin)
