@@ -2,7 +2,8 @@
 
 Atom CI
 =======
-[![Build status: TravisCI][TravisCI-badge]][TravisCI-link]
+[![Build status: GitHub Actions][Actions-badge]][Actions-link]
+[![Build status: Travis CI][TravisCI-badge]][TravisCI-link]
 
 This is a script for setting up continuous integration with an Atom project.
 
@@ -152,8 +153,10 @@ submit a pull-request. So, as usual, I took things into my own hands.
 <!-- Referenced links -->
 [APIs]: https://developer.github.com/v3/repos/releases/
 [Live-example]: https://travis-ci.org/Alhadis/Atom-FormFeeds/jobs/556455405#L78
-[TravisCI-badge]: https://travis-ci.org/Alhadis/Atom-CI.svg?branch=master
-[TravisCI-link]:  https://travis-ci.org/Alhadis/Atom-CI
+[Actions-badge]:  https://img.shields.io/github/workflow/status/Alhadis/Atom-CI/Atom%20CI?label=GitHub%20Actions&logo=github
+[Actions-link]:   https://github.com/Alhadis/Atom-CI/actions
+[TravisCI-badge]: https://img.shields.io/travis/com/Alhadis/Atom-CI?label=Travis%20CI&logo=travis
+[TravisCI-link]:  https://travis-ci.com/Alhadis/Atom-CI
 [`.travis.yml`]: https://docs.travis-ci.com/user/tutorial
 [`atom/ci`]: https://github.com/atom/ci
 [`atom.io`]: https://atom.io/
