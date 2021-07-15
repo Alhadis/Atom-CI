@@ -15,7 +15,7 @@ package-lock.json
 [._]sw[a-p]
 
 # Project-specific
-.atom-ci
+[._]atom-ci
 /test.*
 *.zip
 *.deb

@@ -22,6 +22,7 @@ dist/main.sh: src/*.sh
 # Nuke generated build targets
 clean:
 	rm -f dist/*
+	git clean -fdx test
 
 .PHONY: clean
 
