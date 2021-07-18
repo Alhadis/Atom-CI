@@ -57,7 +57,9 @@ function rmrf(){
 function mkdirp(){
 	param ($path)
 	$segments = ($path -replace "/", [char]0x5C) -split "\\"
+	$absolute = Split-Path -Path $path -IsAbsolute
 	$path = "."
+	if($absolute){ $path = "/" }
 	foreach($segment in $segments){
 		$path = Join-Path $path $segment
 		if(-not(exists $path)){
@@ -84,7 +86,7 @@ function unzip(){
 	param ($archive, $destination = ".")
 	Write-Verbose "Extracting $archive to $destination"
 	mkdirp $destination
-	[System.IO.Compression.ZipFile]::ExtractToDirectory($archive, $destination)
+	[System.IO.Compression.ZipFile]::ExtractToDirectory($archive, $destination, $true)
 }
 
 # Download a web resource
@@ -260,25 +262,12 @@ function downloadAtom(){
 		
 		[Parameter(Position = 1, ParameterSetName = "Tag")]
 		[Parameter(Position = 1, ParameterSetName = "Channel")]
-		[AllowEmptyString()]
 		[String] $assetName,
 		
 		[Parameter(Position = 2, ParameterSetName = "Tag")]
 		[Parameter(Position = 2, ParameterSetName = "Channel")]
 		[String] $saveAs = $assetName
 	)
-	
-	# Resolve the default asset filename for this platform
-	if(-not $assetName){
-		if($IsWindows)   { $assetName = "atom-windows.zip" }
-		elseif($IsMacOS) { $assetName = "atom-mac.zip" }
-		elseif($IsLinux) { $assetName = "atom-amd64.deb" }
-		else{
-			# NOTE: This shouldn't happen
-			$os = [System.Environment]::OSVersion.Platform
-			die "Unsupported platform: $os" 2
-		}
-	}
 	
 	# Resolve the latest release published to the specified channel
 	if($channel){
@@ -304,4 +293,87 @@ function downloadAtom(){
 	Invoke-WebRequest -URI $url -UseBasicParsing -OutFile $saveAs -Headers @{
 		Accept = "application/octet-stream"
 	} > $null
+}
+
+# Setup environment variables
+function setupEnvironment(){
+	setEnv "ELECTRON_NO_ATTACH_CONSOLE" "true"
+	setEnv "ELECTRON_ENABLE_LOGGING" "YES"
+
+	# Resolve what version of Atom we're downloading
+	if($env:ATOM_RELEASE){
+		$channel = "stable"
+		if($env:ATOM_RELEASE -match "-beta"){
+			$channel = "beta"
+		}
+		setEnv "ATOM_CHANNEL" $channel
+	}
+	else{
+		if(-not $env:ATOM_CHANNEL){
+			setEnv "ATOM_CHANNEL" "stable"
+		}
+		elseif(-not $env:ATOM_CHANNEL -in "beta", "stable"){
+			die "Unsupported channel: $env:ATOM_CHANNEL"
+		}
+	}
+
+	# Windows
+	if($IsWindows){
+		$assetName  = "atom-windows.zip"
+		$appName    = "Atom"
+		$scriptName = "atom"
+		if($env:ATOM_CHANNEL -eq "beta"){
+			$appName    = "Atom Beta"
+			$scriptName = "atom-beta"
+		}
+		$atomPath   = Join-Path (Get-Location) "_atom-ci"
+		$scriptPath = "$atomPath\$appName\resources\cli\$scriptName.cmd"
+		$apmPath    = "$atomPath\$appName\resources\app\apm\bin\apm.cmd"
+		$npmPath    = "$atomPath\$appName\resources\app\apm\node_modules\.bin\npm.cmd"
+		setEnv "ATOM_EXE_PATH" "$atomPath\$appName\$scriptName.exe"
+	}
+	# macOS/Darwin
+	elseif($IsMacOS){
+		$assetName = "atom-mac.zip"
+		$appName   = "Atom.app"
+		if($env:ATOM_CHANNEL -eq "beta"){
+			$appName = "Atom Beta.app"
+		}
+		$atomPath   = Join-Path (Get-Location) ".atom-ci"
+		$scriptName = "atom.sh"
+		$scriptPath = "$atomPath/$appName/Contents/Resources/app/$scriptName"
+		$apmPath    = "$atomPath/$appName/Contents/Resources/app/apm/node_modules/.bin/apm"
+		$npmPath    = "$atomPath/$appName/Contents/Resources/app/apm/node_modules/.bin/npm"
+		setEnv "PATH" "${env:PATH}:$atomPath/$appName/Contents/Resources/app/apm/node_modules/.bin"
+		setEnv "ATOM_APP_NAME" $appName
+	}
+	# Linux (Debian assumed)
+	elseif($IsLinux){
+		$assetName  = "atom-amd64.deb"
+		$scriptName = "atom"
+		$apmName    = "apm"
+		if($env:ATOM_CHANNEL -eq "beta"){
+			$scriptName = "atom-beta"
+			$apmName    = "apm-beta"
+		}
+		$atomPath   = Join-Path (Get-Location) ".atom-ci"
+		$scriptPath = "$atomPath/usr/bin/$scriptName"
+		$apmPath    = "$atomPath/usr/bin/$apmName"
+		$npmPath    = "$atomPath/usr/share/$scriptName/resources/app/apm/node_modules/.bin"
+		setEnv "PATH" "${env:PATH}:$atomPath/usr/bin:$npmPath"
+		setEnv "APM_SCRIPT_NAME" $apmName
+		$npmPath += "/npm"
+	}
+	# Unsupported platform (shouldn't happen)
+	else{
+		$os = [System.Environment]::OSVersion.Platform
+		die "Unsupported platform: $os" 2
+	}
+	
+	setEnv "ATOM_ASSET_NAME"  $assetName
+	setEnv "ATOM_PATH"        $atomPath
+	setEnv "ATOM_SCRIPT_NAME" $scriptName
+	setEnv "ATOM_SCRIPT_PATH" $scriptPath
+	setEnv "APM_SCRIPT_PATH"  $apmPath
+	setEnv "NPM_SCRIPT_PATH"  $npmPath
 }

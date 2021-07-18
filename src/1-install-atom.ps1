@@ -6,28 +6,30 @@ Import-Module -Name (Join-Path $PSScriptRoot "0-shared.psm1")
 $VerbosePreference = "Continue"
 
 assertValidProject
-setEnv "ELECTRON_NO_ATTACH_CONSOLE" "true"
-setEnv "ELECTRON_ENABLE_LOGGING" "YES"
+setupEnvironment
 
-
-# Resolve what version of Atom we're downloading
+# Download Atom
 if($env:ATOM_RELEASE){
-	title "Installing Atom ($env:ATOM_RELEASE)"
-	$channel = "stable"
-	if($env:ATOM_RELEASE -match "-beta"){
-		$channel = "beta"
-	}
-	setEnv "ATOM_CHANNEL" $channel
-	downloadAtom -reuseExisting -release $env:ATOM_RELEASE -saveAs "atom.zip"
+	startFold "install-atom" "Installing Atom ($env:ATOM_RELEASE)"
+	downloadAtom -reuseExisting -release $env:ATOM_RELEASE $env:ATOM_ASSET_NAME -saveAs "atom.zip"
 }
 else{
-	if(-not $env:ATOM_CHANNEL){
-		setEnv "ATOM_CHANNEL" "stable"
-	}
-	elseif(-not $env:ATOM_CHANNEL -in "beta", "stable"){
-		die "Unsupported channel: $env:ATOM_CHANNEL"
-	}
 	$channel = $env:ATOM_CHANNEL.tolower()
 	startFold "install-atom" "Installing Atom (Latest $channel release)"
-	downloadAtom -reuseExisting -channel $channel -saveAs "atom.zip"
+	downloadAtom -reuseExisting -channel $channel $env:ATOM_ASSET_NAME -saveAs "atom.zip"
 }
+
+# Extract files
+unzip "atom.zip" $env:ATOM_PATH
+
+# Dump environment variables
+if($env:TRAVIS_JOB_ID -or $env:GITHUB_ACTIONS -or $env:ATOM_CI_DUMP_ENV){
+	startFold 'env-dump' 'Dumping environment variables'
+	$env = [Environment]::GetEnvironmentVariables()
+	$env.keys | Sort-Object | ForEach-Object {
+		[PSCustomObject] @{ Name = $_; Value = $env[$_] }
+	} | Format-Table -Wrap
+	endFold 'env-dump'
+}
+
+endFold 'install-atom'
