@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 
-if($env:ATOM_PATH -eq $null){
+if($null -eq $env:ATOM_PATH){
 	Set-StrictMode -Version Latest
 	$ErrorActionPreference = "Stop"
 	Import-Module -Name (Join-Path $PSScriptRoot "0-shared.psm1")
@@ -40,7 +40,6 @@ function apmHasCI(){
 	$version = (getAPMVersion).apm -split "\."
 	$major   = [int] $version[0]
 	$minor   = [int] $version[1]
-	$patch   = [int] $version[2]
 	($major -gt 2) -or ($major -eq 2 -and $minor -ge 1)
 }
 
@@ -60,7 +59,7 @@ function apmInstall(){
 		cmd "$env:APM_SCRIPT_PATH" install @args
 		$output = cmd "$env:APM_SCRIPT_PATH" clean
 	}
-	$output = $output | Out-String | gsub '(✓)(\r?\n)(.*)\k<2>?$' '$1$3$2'
+	$output = $output | Out-String | gsub '(\u2713)(\r?\n)(.*)\k<2>?$' '$1$3$2'
 	Write-Host $output.trim()
 }
 

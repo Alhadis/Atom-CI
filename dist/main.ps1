@@ -143,8 +143,8 @@ function formatHTTPDate(){
 		ValueFromPipeline = $true,
 		ValueFromPipelineByPropertyName = $true
 	)] [DateTime] $date)
-	$culture = [System.Globalization.CultureInfo]::InvariantCulture
-	$date.toString("ddd, dd MMM yyyy HH:mm:ss", $culture) + " GMT"
+	begin   { $culture = [System.Globalization.CultureInfo]::InvariantCulture }
+	process { $date.toString("ddd, dd MMM yyyy HH:mm:ss", $culture) + " GMT" }
 }
 
 $script:jsonCache = @{}
@@ -189,7 +189,7 @@ function endFold(){
 		Write-Host -NoNewline $text
 	}
 	elseif($env:GITHUB_ACTIONS -and $script:folds.Count -gt 0){
-		if($id -eq $null){
+		if($null -eq $id){
 			$id = $script:folds[-1]
 		}
 		elseif(-not $script:folds.Contains($id)){
@@ -237,11 +237,12 @@ function haveScript(){
 function getLatestRelease(){
 	[OutputType([String])]
 	param ($betaChannel = $false)
+	if($null -eq $betaChannel){ $betaChannel = $false }
 	[xml]$releases = fetch "https://github.com/atom/atom/releases.atom"
-	($releases.feed.entry
-	| Where-Object {$betaChannel -eq ($_.title -match "-beta")} |
-	Sort-Object -Property "Updated" -Descending
-	| Select-Object -Index 0
+	($releases.feed.entry |
+	Where-Object {$betaChannel -eq ($_.title -match "-beta")}
+	| Sort-Object -Property "Updated" -Descending |
+	Select-Object -Index 0
 	).link.href
 }
 
@@ -251,26 +252,26 @@ function extractLinks(){
 
 	# Normalise hostname, if provided
 	if($hostname){
-		$hostname = $hostname |
-		gsub "^(?![-\w]+:)" "https://"
-		| gsub "(https?)://?" '$1://' "IgnoreCase" |
-		gsub "/+$"
+		$hostname = $hostname
+		| gsub "^(?![-\w]+:)" "https://" |
+		gsub "(https?)://?" '$1://' "IgnoreCase"
+		| gsub "/+$"
 	}
 	
 	# Normalise attribute casing and quoting
-	$html = $input
-	| gsub "(?i)(\s+|^)href\s*=\s*" " href=" |
-	gsub "href=\s*([^""'\s<>]+)" 'href="$1"'
-	| gsub "href='([^'<>]*)'" 'href="$1"'
+	$html = $input |
+	gsub "(?i)(\s+|^)href\s*=\s*" " href="
+	| gsub "href=\s*([^""'\s<>]+)" 'href="$1"' |
+	gsub "href='([^'<>]*)'" 'href="$1"'
 	
 	# Retrieve all non-blank HREF attributes
-	[Regex]::Matches($html, ' href="([^"<>]+)"') | ForEach-Object {
-		$_.Groups[-1].value |
-		gsub "&amp;"  "&"
-		| gsub "&quot;" '"' |
-		gsub "&lt;"   "<"
-		| gsub "&gt;"   ">" |
-		gsub "^(?!\w+?://?)/{0,2}" "$hostname/"
+	[Regex]::Matches($html, ' href="([^"<>]+)"') | % {
+		$_.Groups[-1].value
+		| gsub "&amp;"  "&" |
+		gsub "&quot;" '"'
+		| gsub "&lt;"   "<" |
+		gsub "&gt;"   ">"
+		| gsub "^(?!\w+?://?)/{0,2}" "$hostname/"
 	}
 }
 
@@ -314,10 +315,10 @@ function downloadAtom(){
 	}
 	
 	# Resolve the URL from which to download
-	$url = fetch "https://github.com/atom/atom/releases/tag/$release"
-	| extractLinks "github.com" |
-	Where-Object { $_ -match "/$release/$assetName" }
-	| Select-Object -Index 0
+	$url = fetch "https://github.com/atom/atom/releases/tag/$release" |
+	extractLinks "github.com"
+	| Where-Object { $_ -match "/$release/$assetName" } |
+	Select-Object -Index 0
 	
 	# Reuse an earlier download if one exists
 	if($reuseExisting -and (isFile $saveAs)){
@@ -446,7 +447,7 @@ unzip "atom.zip" $env:ATOM_PATH
 if($env:TRAVIS_JOB_ID -or $env:GITHUB_ACTIONS -or $env:ATOM_CI_DUMP_ENV){
 	startFold 'env-dump' 'Dumping environment variables'
 	$env = [Environment]::GetEnvironmentVariables()
-	$env.keys | Sort-Object | ForEach-Object {
+	$env.keys | Sort-Object | % {
 		[PSCustomObject] @{ Name = $_; Value = $env[$_] }
 	} | Format-Table -Wrap
 	endFold 'env-dump'
@@ -485,7 +486,6 @@ function apmHasCI(){
 	$version = (getAPMVersion).apm -split "\."
 	$major   = [int] $version[0]
 	$minor   = [int] $version[1]
-	$patch   = [int] $version[2]
 	($major -gt 2) -or ($major -eq 2 -and $minor -ge 1)
 }
 
@@ -505,7 +505,7 @@ function apmInstall(){
 		cmd "$env:APM_SCRIPT_PATH" install @args
 		$output = cmd "$env:APM_SCRIPT_PATH" clean
 	}
-	$output = $output | Out-String | gsub '(✓)(\r?\n)(.*)\k<2>?$' '$1$3$2'
+	$output = $output | Out-String | gsub '(\u2713)(\r?\n)(.*)\k<2>?$' '$1$3$2'
 	Write-Host $output.trim()
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 
-if($env:ATOM_PATH -eq $null){
+if($null -eq $env:ATOM_PATH){
 	Set-StrictMode -Version Latest
 	$ErrorActionPreference = "Stop"
 	Import-Module -Name (Join-Path $PSScriptRoot "0-shared.psm1")

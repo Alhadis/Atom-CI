@@ -139,8 +139,8 @@ function formatHTTPDate(){
 		ValueFromPipeline = $true,
 		ValueFromPipelineByPropertyName = $true
 	)] [DateTime] $date)
-	$culture = [System.Globalization.CultureInfo]::InvariantCulture
-	$date.toString("ddd, dd MMM yyyy HH:mm:ss", $culture) + " GMT"
+	begin   { $culture = [System.Globalization.CultureInfo]::InvariantCulture }
+	process { $date.toString("ddd, dd MMM yyyy HH:mm:ss", $culture) + " GMT" }
 }
 
 
@@ -186,7 +186,7 @@ function endFold(){
 		Write-Host -NoNewline $text
 	}
 	elseif($env:GITHUB_ACTIONS -and $script:folds.Count -gt 0){
-		if($id -eq $null){
+		if($null -eq $id){
 			$id = $script:folds[-1]
 		}
 		elseif(-not $script:folds.Contains($id)){
@@ -234,6 +234,7 @@ function haveScript(){
 function getLatestRelease(){
 	[OutputType([String])]
 	param ($betaChannel = $false)
+	if($null -eq $betaChannel){ $betaChannel = $false }
 	[xml]$releases = fetch "https://github.com/atom/atom/releases.atom"
 	($releases.feed.entry
 	| Where-Object {$betaChannel -eq ($_.title -match "-beta")}
@@ -261,7 +262,7 @@ function extractLinks(){
 	| gsub "href='([^'<>]*)'" 'href="$1"'
 	
 	# Retrieve all non-blank HREF attributes
-	[Regex]::Matches($html, ' href="([^"<>]+)"') | ForEach-Object {
+	[Regex]::Matches($html, ' href="([^"<>]+)"') | % {
 		$_.Groups[-1].value
 		| gsub "&amp;"  "&"
 		| gsub "&quot;" '"'

@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 
-if($env:ATOM_PATH -eq $null){
+if($null -eq $env:ATOM_PATH){
 	Set-StrictMode -Version Latest
 	$ErrorActionPreference = "Stop"
 	Import-Module -Name (Join-Path $PSScriptRoot "0-shared.psm1")
@@ -28,7 +28,7 @@ unzip "atom.zip" $env:ATOM_PATH
 if($env:TRAVIS_JOB_ID -or $env:GITHUB_ACTIONS -or $env:ATOM_CI_DUMP_ENV){
 	startFold 'env-dump' 'Dumping environment variables'
 	$env = [Environment]::GetEnvironmentVariables()
-	$env.keys | Sort-Object | ForEach-Object {
+	$env.keys | Sort-Object | % {
 		[PSCustomObject] @{ Name = $_; Value = $env[$_] }
 	} | Format-Table -Wrap
 	endFold 'env-dump'

@@ -5,6 +5,14 @@ all: lint dist/main.sh
 lint: src/*.sh
 	shellcheck --severity=warning --shell=sh $^
 	checkbashisms $^
+	$(ps-lint) -Path src
+
+ps-lint = pwsh -NoLogo -Command Invoke-ScriptAnalyzer \
+	-EnableExit \
+	-Recurse \
+	-Settings '@{Rules = @{PSAvoidUsingCmdletAliases = @{Whitelist = @("%")}}}' \
+	-ExcludeRule '@("PSAvoidUsingWriteHost")' \
+	-Severity '@("Error", "Warning", "ParseError")'
 
 .PHONY: lint
 
@@ -18,6 +26,7 @@ dist/main.ps1: src/*.psm1 src/*.ps1
 	printf >> $@ '$$ErrorActionPreference = "Stop"\n\n'
 	cat $^ | sed -f src/strip.sed | sed 'N;s/\n\([[:blank:]]*\)| */ |\n\1/g' | cat -s >> $@
 	chmod +x $@
+	test -n "$$WATCHMAN_ROOT" || $(ps-lint) -Path $@
 
 dist/main.sh: src/*.sh
 	printf '#!/bin/sh\n' > $@
