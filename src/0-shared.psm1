@@ -6,6 +6,40 @@ function title(){
 	Write-Host $text
 }
 
+# Embellish and echo a command that's about to be executed
+function cmdfmt(){
+	$name = $args[0]
+	$argv = $args[1..($args.length - 1)]
+	$ps = "$"
+	if($IsWindows){ $ps = ">" }
+	Write-Host -NoNewline -ForegroundColor DarkGreen $ps
+	Write-Host -NoNewline -ForegroundColor Green " $name"
+	foreach($arg in $argv){
+		if($arg -match '^(?![~#])[-+#:@^~\w]+$'){
+			Write-Host -NoNewline -ForegroundColor Green " $arg"
+		}
+		else{
+			Write-Host -NoNewline -ForegroundColor DarkGreen ' "'
+			Write-Host -NoNewline -ForegroundColor Green     "$arg"
+			Write-Host -NoNewline -ForegroundColor DarkGreen '"'
+		}
+	}
+	Write-Host ""
+}
+
+# Print a command before executing it
+function cmd(){
+	$name = $args[0]
+	$argv = $args[1..($args.length - 1)]
+	cmdfmt $name @argv
+	
+	# HACK: Fix double-quote stripping
+	if("AZ" -eq (& node -p "'A`"Z'")){
+		$argv = $argv.forEach{$_ -replace '"', '"""'}
+	}
+	& "$name" @argv
+}
+
 # Return true if a path exists on disk
 function exists(){
 	param ($path)
@@ -297,6 +331,12 @@ function downloadAtom(){
 
 # Setup environment variables
 function setupEnvironment(){
+	$folded = $false
+	if($VerbosePreference -in "Continue", "Inquire"){
+		startFold "setup-env" "Resolving environment variables"
+		$folded = $true
+	}
+	
 	setEnv "ELECTRON_NO_ATTACH_CONSOLE" "true"
 	setEnv "ELECTRON_ENABLE_LOGGING" "YES"
 
@@ -376,4 +416,8 @@ function setupEnvironment(){
 	setEnv "ATOM_SCRIPT_PATH" $scriptPath
 	setEnv "APM_SCRIPT_PATH"  $apmPath
 	setEnv "NPM_SCRIPT_PATH"  $npmPath
+
+	if($folded){
+		endFold "setup-env"
+	}
 }
