@@ -1,4 +1,4 @@
-all: lint dist/main.sh
+all: lint dist
 
 
 # Identify potential portability hassles in shell-scripts
