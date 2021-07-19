@@ -239,10 +239,10 @@ function getLatestRelease(){
 	param ($betaChannel = $false)
 	if($null -eq $betaChannel){ $betaChannel = $false }
 	[xml]$releases = fetch "https://github.com/atom/atom/releases.atom"
-	($releases.feed.entry |
-	Where-Object {$betaChannel -eq ($_.title -match "-beta")}
-	| Sort-Object -Property "Updated" -Descending |
-	Select-Object -Index 0
+	($releases.feed.entry
+	| Where-Object {$betaChannel -eq ($_.title -match "-beta")}
+	| Sort-Object -Property "Updated" -Descending
+	| Select-Object -Index 0
 	).link.href
 }
 
@@ -253,24 +253,24 @@ function extractLinks(){
 	# Normalise hostname, if provided
 	if($hostname){
 		$hostname = $hostname
-		| gsub "^(?![-\w]+:)" "https://" |
-		gsub "(https?)://?" '$1://' "IgnoreCase"
+		| gsub "^(?![-\w]+:)" "https://"
+		| gsub "(https?)://?" '$1://' "IgnoreCase"
 		| gsub "/+$"
 	}
 	
 	# Normalise attribute casing and quoting
-	$html = $input |
-	gsub "(?i)(\s+|^)href\s*=\s*" " href="
-	| gsub "href=\s*([^""'\s<>]+)" 'href="$1"' |
-	gsub "href='([^'<>]*)'" 'href="$1"'
+	$html = $input
+	| gsub "(?i)(\s+|^)href\s*=\s*" " href="
+	| gsub "href=\s*([^""'\s<>]+)" 'href="$1"'
+	| gsub "href='([^'<>]*)'" 'href="$1"'
 	
 	# Retrieve all non-blank HREF attributes
 	[Regex]::Matches($html, ' href="([^"<>]+)"') | % {
 		$_.Groups[-1].value
-		| gsub "&amp;"  "&" |
-		gsub "&quot;" '"'
-		| gsub "&lt;"   "<" |
-		gsub "&gt;"   ">"
+		| gsub "&amp;"  "&"
+		| gsub "&quot;" '"'
+		| gsub "&lt;"   "<"
+		| gsub "&gt;"   ">"
 		| gsub "^(?!\w+?://?)/{0,2}" "$hostname/"
 	}
 }
@@ -315,10 +315,10 @@ function downloadAtom(){
 	}
 	
 	# Resolve the URL from which to download
-	$url = fetch "https://github.com/atom/atom/releases/tag/$release" |
-	extractLinks "github.com"
-	| Where-Object { $_ -match "/$release/$assetName" } |
-	Select-Object -Index 0
+	$url = fetch "https://github.com/atom/atom/releases/tag/$release"
+	| extractLinks "github.com"
+	| Where-Object { $_ -match "/$release/$assetName" }
+	| Select-Object -Index 0
 	
 	# Reuse an earlier download if one exists
 	if($reuseExisting -and (isFile $saveAs)){
