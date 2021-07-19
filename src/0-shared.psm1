@@ -120,7 +120,26 @@ function unzip(){
 	param ($archive, $destination = ".")
 	Write-Verbose "Extracting $archive to $destination"
 	mkdirp $destination
-	[System.IO.Compression.ZipFile]::ExtractToDirectory($archive, $destination, $true)
+	if($IsWindows){
+		[System.IO.Compression.ZipFile]::ExtractToDirectory($archive, $destination, $true)
+	}
+	# Use unzip(1) because PowerShell's `ZipFile` doesn't grok symlinks
+	else{
+		$unzip = which "unzip"
+		if($null -eq $unzip){
+			die "Unzip utility required to unpack archive containing symlinks"
+		}
+		cmd "$unzip" -q $archive -d $destination
+	}
+}
+
+# Locate an executable in the user's search-path
+function which(){
+	param ([String] $name)
+	try{
+		$cmd = Get-Command -commandType Application -totalCount 1 $name
+		return $cmd.source
+	} catch { return $null }
 }
 
 # Download a web resource
