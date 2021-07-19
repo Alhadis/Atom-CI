@@ -1,13 +1,13 @@
 #!/usr/bin/env pwsh
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
 
-Import-Module -Name (Join-Path $PSScriptRoot "0-shared.psm1")
-$VerbosePreference = "Continue"
-
-assertValidProject
-setupEnvironment
-
+if($env:ATOM_PATH -eq $null){
+	Set-StrictMode -Version Latest
+	$ErrorActionPreference = "Stop"
+	Import-Module -Name (Join-Path $PSScriptRoot "0-shared.psm1")
+	$VerbosePreference = "Continue"
+	assertValidProject
+	setupEnvironment
+}
 
 # Display version info for Atom/Node/?PM
 function showVersions(){

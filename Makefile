@@ -9,7 +9,16 @@ lint: src/*.sh
 .PHONY: lint
 
 
-# Concatenate each source file into a single shell-script
+# Concatenate source files into a single script for each implementation
+dist: dist/main.ps1 dist/main.sh
+
+dist/main.ps1: src/*.psm1 src/*.ps1
+	printf  > $@ '#!/usr/bin/env pwsh\n'
+	printf >> $@ 'Set-StrictMode -Version Latest\n'
+	printf >> $@ '$$ErrorActionPreference = "Stop"\n\n'
+	cat $^ | sed -f src/strip.sed | sed 'N;s/\n\([[:blank:]]*\)| */ |\n\1/g' | cat -s >> $@
+	chmod +x $@
+
 dist/main.sh: src/*.sh
 	printf '#!/bin/sh\n' > $@
 	printf 'set -e\n'   >> $@
@@ -43,6 +52,14 @@ apt-install:
 # Regenerate concatenated script when source files are modified
 watch:
 	watchman watch .
-	watchman -- trigger . join 'src/*.sh' -- make dist/main.sh
+	watchman -- trigger . join-sh 'src/*.sh' -- make dist/main.sh
+	watchman -- trigger . join-pwsh 'src/*.psm1' 'src/*.ps1' -- make dist/main.ps1
 
 .PHONY: watch
+
+
+# Stop monitoring directory for changes
+unwatch:
+	watchman -- watch-del .
+
+.PHONY: unwatch
