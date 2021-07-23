@@ -97,7 +97,14 @@ function mkdirp(){
 	$segments = ($path -replace "/", [char]0x5C) -split "\\"
 	$absolute = Split-Path -Path $path -IsAbsolute
 	$path = "."
-	if($absolute){ $path = "/" }
+	if($absolute){
+		$path = "/"
+		if($IsWindows){
+			$drive    = $segments[0] + "/"
+			$segments = $segments[1..($segments.count - 1)]
+			$path     = $drive + $path
+		}
+	}
 	foreach($segment in $segments){
 		$path = Join-Path $path $segment
 		if(-not(exists $path)){
@@ -122,10 +129,22 @@ function setEnv(){
 # Extract the contents of a ZIP archive
 function unzip(){
 	param ($archive, $destination = ".")
-	Write-Verbose "Extracting $archive to $destination"
+	
+	# Expand relative paths to absolute ones
+	$us  = [char]0x1B + "[4m"
+	$ue  = [char]0x1B + "[24m"
+	$cwd = Get-Location
+	if(-not (Split-Path -Path $archive     -IsAbsolute)){ $archive     = Join-Path $cwd $archive }
+	if(-not (Split-Path -Path $destination -IsAbsolute)){ $destination = Join-Path $cwd $destination }
+	Write-Host "Extracting $us$archive$ue to $us$destination$ue..."
+	
+	# Delete and recreate target directory
+	Remove-Item -Recurse -Force -ErrorAction Ignore $destination
 	mkdirp $destination
+	
 	if($IsWindows){
-		[System.IO.Compression.ZipFile]::ExtractToDirectory($archive, $destination, $true)
+		Add-Type -AssemblyName System.IO.Compression.FileSystem
+		[System.IO.Compression.ZipFile]::ExtractToDirectory($archive, $destination)
 	}
 	# Use unzip(1) because PowerShell's `ZipFile` doesn't grok symlinks
 	else{
@@ -133,7 +152,7 @@ function unzip(){
 		if($null -eq $unzip){
 			die "Unzip utility required to unpack archive containing symlinks"
 		}
-		cmd "$unzip" -q $archive -d $destination
+		cmd "$unzip" -oq $archive -d $destination
 	}
 }
 
@@ -151,6 +170,7 @@ function fetch(){
 	param ($url, $headers = @{})
 	Write-Verbose "Downloading: $url"
 	$ProgressPreference = "SilentlyContinue"
+	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::TLS12
 	Invoke-WebRequest -URI $url -UseBasicParsing -Headers $headers
 }
 
@@ -166,6 +186,27 @@ function formatHTTPDate(){
 	process { $date.toString("ddd, dd MMM yyyy HH:mm:ss", $culture) + " GMT" }
 }
 
+# Convert a PSCustomObject to a HashTable
+function convertObjectToHash(){
+	param ($subject, [HashTable] $refs = @{})
+	if($refs.containsKey($subject)){
+		return $refs[$subject]
+	}
+	$hash = @{}
+	$refs[$subject] = $hash
+	$subject.psobject.properties | % {
+		$key   = $_.name
+		$value = $_.value
+		if($value -is [PSCustomObject]){
+			$converted = convertObjectToHash $value $refs
+			$refs[$value] = $converted
+			$value = $converted
+		}
+		$hash[$key] = $value
+	}
+	$hash
+}
+
 $script:jsonCache = @{}
 
 # Load and parse a JSON file, with the results cached to quicken future lookups
@@ -176,7 +217,13 @@ function json(){
 		Write-Verbose "Reusing cached contents of $path"
 		return $script:jsonCache[$path]
 	}
-	$json = Get-Content $path | ConvertFrom-JSON -AsHashTable
+	$json = Get-Content $path
+	if((Get-Command ConvertFrom-JSON).Parameters.containsKey("AsHashTable")){
+		$json = $json | ConvertFrom-JSON -AsHashTable
+	}
+	else{
+		$json = convertObjectToHash ($json | ConvertFrom-JSON)
+	}
 	$script:jsonCache[$path] = $json
 	$json
 }
@@ -252,46 +299,33 @@ function haveScript(){
 	$pkg.contains("scripts") -and $pkg.scripts.contains($name)
 }
 
+# Execute a script defined in a project's `package.json` file
+function runScript(){
+	param ($name, [Switch] $ifPresent)
+	$pkg = json "package.json"
+	if(-not $pkg.scripts.contains($name)){
+		if($ifPresent){ return }
+		die "No such script: $name"
+	}
+	Write-Host ('Running "{0}" script defined in `package.json`' -f $name)
+	$src  = $pkg.scripts[$name]
+	$path = $env:PATH
+	setEnv "PATH" "node_modules\.bin;$env:PATH"
+	try     { Invoke-Expression $src 2>&1 | % {"$_"} }
+	finally { setEnv "PATH" $path }
+}
+
 # Retrieve the tag-name for the latest Atom release
 function getLatestRelease(){
 	[OutputType([String])]
 	param ($betaChannel = $false)
 	if($null -eq $betaChannel){ $betaChannel = $false }
 	[xml]$releases = fetch "https://github.com/atom/atom/releases.atom"
-	($releases.feed.entry
-	| Where-Object {$betaChannel -eq ($_.title -match "-beta")}
-	| Sort-Object -Property "Updated" -Descending
+	($releases.feed.entry `
+	| Where-Object {$betaChannel -eq ($_.title -match "-beta")} `
+	| Sort-Object -Property "Updated" -Descending `
 	| Select-Object -Index 0
 	).link.href
-}
-
-# Extract a list of HREF attributes from HTML source
-function extractLinks(){
-	param ($hostname = "")
-
-	# Normalise hostname, if provided
-	if($hostname){
-		$hostname = $hostname
-		| gsub "^(?![-\w]+:)" "https://"
-		| gsub "(https?)://?" '$1://' "IgnoreCase"
-		| gsub "/+$"
-	}
-	
-	# Normalise attribute casing and quoting
-	$html = $input
-	| gsub "(?i)(\s+|^)href\s*=\s*" " href="
-	| gsub "href=\s*([^""'\s<>]+)" 'href="$1"'
-	| gsub "href='([^'<>]*)'" 'href="$1"'
-	
-	# Retrieve all non-blank HREF attributes
-	[Regex]::Matches($html, ' href="([^"<>]+)"') | % {
-		$_.Groups[-1].value
-		| gsub "&amp;"  "&"
-		| gsub "&quot;" '"'
-		| gsub "&lt;"   "<"
-		| gsub "&gt;"   ">"
-		| gsub "^(?!\w+?://?)/{0,2}" "$hostname/"
-	}
 }
 
 # Download an Atom release
@@ -333,23 +367,90 @@ function downloadAtom(){
 		$release = [URI]::new($release).segments[-1]
 	}
 	
-	# Resolve the URL from which to download
-	$url = fetch "https://github.com/atom/atom/releases/tag/$release"
-	| extractLinks "github.com"
-	| Where-Object { $_ -match "/$release/$assetName" }
-	| Select-Object -Index 0
-	
 	# Reuse an earlier download if one exists
 	if($reuseExisting -and (isFile $saveAs)){
 		"Already downloaded: {0}[4m$saveAs{0}[24m" -f [char]0x1B | Write-Host
 		return
 	}
 	
-	# Otherwise, start downloadin'
-	"Downloading Atom $release from {0}[4m$url{0}[24m" -f [char]0x1B | Write-Host
-	Invoke-WebRequest -URI $url -UseBasicParsing -OutFile $saveAs -Headers @{
-		Accept = "application/octet-stream"
-	} > $null
+	# Resolve the URL from which to download
+	foreach($link in (fetch "https://github.com/atom/atom/releases/tag/$release").links){
+		$url = $link.href `
+		| gsub "^(?!\w+?://?)/{0,2}" "https://github.com/" `
+		| gsub "#.*"
+		
+		if($url -match "^https://github\.com/.*/$release/$assetName(?:$|\?)"){
+			"Downloading Atom $release from {0}[4m$url{0}[24m" -f [char]0x1B | Write-Host
+			Invoke-WebRequest -URI $url -UseBasicParsing -OutFile $saveAs -Headers @{
+				Accept = "application/octet-stream"
+			} > $null
+			return
+		}
+	}
+	throw "Failed to resolve asset URL"
+}
+
+# Create a wrapper script to invoke another executable
+function makeWrapper(){
+	param (
+		[Parameter(Mandatory = $true)] [String] $target,
+		[Parameter(Mandatory = $true)] [String] $base
+	)
+	startFold 'wrapper' 'Generating wrapper scripts'
+	$us = [char]0x1B + "[4m"
+	$ue = [char]0x1B + "[24m"
+	"Target binary: {0}$target{1}" -f $us, $ue | Write-Host
+	
+	$scripts = @{
+		# PowerShell script that collects all output emitted by target before displaying it
+		".ps1" = @(
+			'#!/usr/bin/env pwsh'
+			'Set-StrictMode -Version Latest'
+			'$ErrorActionPreference = "Stop"'
+			('& "{0}" --test spec 2>&1' -f $target) + ' | % { "$_" }'
+		) -join [System.Environment]::NewLine
+		
+		# Batch-file which only exists to satisfy $env:ComSpec
+		".cmd" = @(
+			'@echo off'
+			'powershell -File "{0}.ps1" %*' -f $base
+		) -join "`r`n"
+		
+		# POSIX shell-script, which only exists to satisfy my OCD
+		"" = @(
+			'#!/bin/sh'
+			'set -e'
+			'exec pwsh -File "{0}.ps1" -- "$@"' -f $base
+		) -join "`n"
+	}
+	foreach($ext in $scripts.keys){
+		$src  = $scripts[$ext]
+		$path = $base + $ext
+		
+		# Preserve timestamps by only writing to disk if script doesn't exist
+		if((isFile $path) -and ((Get-Content -Encoding "UTF8" -Raw $path).trimEnd() -ceq "$src".trimEnd())){
+			"Already generated: {0}$path{1}" -f $us, $ue | Write-Host
+			continue
+		}
+		# Generate a wrapper with some spiffy-looking feedback
+		else{
+			rmrf $path
+			"Writing: {0}$path{1}" -f $us, $ue | Write-Host
+			New-Item -ItemType "File" -Path $path -Force -Value $src > $null
+			$num = 1
+			foreach($line in $src -split '\r?\n'){
+				$div = [char]0x2502
+				Write-Host -ForegroundColor Gray     -NoNewline ($num++)
+				Write-Host -ForegroundColor DarkGray -NoNewline "$div "
+				Write-Host -ForegroundColor DarkCyan $line
+			}
+			# Set executable bit if running on a POSIX system
+			if(($src.substring(0, 2) -eq "#!") -and ($IsMacOS -or $IsLinux)){
+				cmd chmod +x $path
+			}
+		}
+	}
+	endFold 'wrapper'
 }
 
 # Setup environment variables
@@ -392,8 +493,10 @@ function setupEnvironment(){
 		$atomPath   = Join-Path (Get-Location) "_atom-ci"
 		$scriptPath = "$atomPath\$appName\resources\cli\$scriptName.cmd"
 		$apmPath    = "$atomPath\$appName\resources\app\apm\bin\apm.cmd"
-		$npmPath    = "$atomPath\$appName\resources\app\apm\node_modules\.bin\npm.cmd"
+		$npmPath    = "$atomPath\$appName\resources\app\apm\node_modules\.bin"
+		setEnv "PATH" "$npmPath;${env:PATH}"
 		setEnv "ATOM_EXE_PATH" "$atomPath\$appName\$scriptName.exe"
+		$npmPath += "\npm.cmd"
 	}
 	# macOS/Darwin
 	elseif($IsMacOS){
@@ -405,10 +508,11 @@ function setupEnvironment(){
 		$atomPath   = Join-Path (Get-Location) ".atom-ci"
 		$scriptName = "atom.sh"
 		$scriptPath = "$atomPath/$appName/Contents/Resources/app/$scriptName"
-		$apmPath    = "$atomPath/$appName/Contents/Resources/app/apm/node_modules/.bin/apm"
-		$npmPath    = "$atomPath/$appName/Contents/Resources/app/apm/node_modules/.bin/npm"
-		setEnv "PATH" "${env:PATH}:$atomPath/$appName/Contents/Resources/app/apm/node_modules/.bin"
+		$npmPath    = "$scriptPath/apm/node_modules/.bin"
+		$apmPath    = "$npmPath/apm"
+		setEnv "PATH" "${npmPath}:${env:PATH}"
 		setEnv "ATOM_APP_NAME" $appName
+		$npmPath += "/npm"
 	}
 	# Linux (Debian assumed)
 	elseif($IsLinux){
@@ -423,7 +527,7 @@ function setupEnvironment(){
 		$scriptPath = "$atomPath/usr/bin/$scriptName"
 		$apmPath    = "$atomPath/usr/bin/$apmName"
 		$npmPath    = "$atomPath/usr/share/$scriptName/resources/app/apm/node_modules/.bin"
-		setEnv "PATH" "${env:PATH}:$atomPath/usr/bin:$npmPath"
+		setEnv "PATH" "$atomPath/usr/bin:${npmPath}:${env:PATH}"
 		setEnv "APM_SCRIPT_NAME" $apmName
 		$npmPath += "/npm"
 	}
@@ -445,6 +549,23 @@ function setupEnvironment(){
 	}
 }
 
+# Ensure these variables are defined for older versions of PowerShell
+try{
+	Get-Variable $IsWindows >$null
+	Get-Variable $IsMacOS   >$null
+	Get-Variable $IsLinux   >$null
+}
+catch{
+	$unix = [System.Environment]::OSVersion.Platform -like "Unix*"
+	New-Variable -Name "IsWindows" -Scope "Global" -Option ReadOnly,AllScope -Visibility "Public" -Value (-not $unix)
+	New-Variable -Name "IsLinux"   -Scope "Global" -Option ReadOnly,AllScope -Visibility "Public" -Value $unix
+	New-Variable -Name "IsMacOS"   -Scope "Global" -Option ReadOnly,AllScope -Visibility "Public" -Value $false
+}
+
+# Set the default encoding to UTF-8
+$OutputEncoding = "utf8"
+
+"Working directory: {0}[4m{1}{0}[24m" -f [char]0x1B, (Get-Location) | Write-Host
 assertValidProject
 setupEnvironment
 
@@ -462,6 +583,10 @@ else{
 # Extract files
 unzip "atom.zip" $env:ATOM_PATH
 
+# Create wrapper for Atom binary
+$wrapper = Join-Path (Split-Path $env:NPM_SCRIPT_PATH) "atom"
+makeWrapper $env:ATOM_SCRIPT_PATH $wrapper
+
 # Dump environment variables
 if($env:TRAVIS_JOB_ID -or $env:GITHUB_ACTIONS -or $env:ATOM_CI_DUMP_ENV){
 	startFold 'env-dump' 'Dumping environment variables'
@@ -478,7 +603,7 @@ endFold 'install-atom'
 function showVersions(){
 	param ([Switch] $all)
 	Write-Host "Printing version info"
-	cmd "$env:ATOM_SCRIPT_PATH" --version
+	cmd "$env:ATOM_SCRIPT_PATH" --version | Out-String
 	cmd "$env:APM_SCRIPT_PATH"  --version --no-color
 	if(-not $all){ return }
 	cmd node --version
@@ -565,10 +690,11 @@ if($env:APM_TEST_PACKAGES){
 endFold "install-deps"
 
 title "Running tasks"
+$use = $null -ne $env:ATOM_CI_USE_PACKAGE_SCRIPTS
 
 # Run "lint" script if one exists in `package.json`
-if(haveScript "lint"){
-	cmd "$env:NPM_SCRIPT_PATH" run lint
+if($use -and (haveScript "lint")){
+	runScript "lint"
 }
 # If not, use assumed defaults
 else{
@@ -577,22 +703,21 @@ else{
 		Write-Host "Linting package with $linter..."
 		for($dir -in "lib", "src", "spec", "test"){
 			if(isDir $dir){
-				cmd "npx" $linter "./$dir"
+				cmd "npx" $linter $dir
 			}
 		}
 	}
 }
 
 # Run the `package.json` "test" script if one exists
-if(haveScript "test"){
-	cmd "$env:NPM_SCRIPT_PATH" run test
+if($use -and (haveScript "test")){
+	runScript "test"
 }
-# If not, locate test-suite manually
 else{
 	foreach($dir in "spec", "specs", "test", "tests"){
 		if(isDir $dir){
 			Write-Host "Running specs..."
-			cmd "$env:ATOM_SCRIPT_PATH" --test "./$dir"
+			cmd "$env:ATOM_SCRIPT_PATH" --test $dir 2>&1 | % { "$_" }
 			break
 		}
 	}

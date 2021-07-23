@@ -11,7 +11,7 @@ ps-lint = pwsh -NoLogo -Command Invoke-ScriptAnalyzer \
 	-EnableExit \
 	-Recurse \
 	-Settings '@{Rules = @{PSAvoidUsingCmdletAliases = @{Whitelist = @("%")}}}' \
-	-ExcludeRule '@("PSAvoidUsingWriteHost")' \
+	-ExcludeRule '@("PSAvoidUsingWriteHost", "PSAvoidUsingInvokeExpression")' \
 	-Severity '@("Error", "Warning", "ParseError")'
 
 .PHONY: lint

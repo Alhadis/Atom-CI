@@ -12,37 +12,30 @@ This is a script for setting up continuous integration with an Atom project.
 
 Usage
 -----
-Run the following command:
 
-~~~sh
-curl -sL https://git.io/fji1w | sh
-~~~
-
-This should work on any Unix-like system, irrespective of whether it's invoked by a CI server or directly from your terminal.
-**Note that Windows is _not_ currently supported<!-- TODO: (see [below][Windows] for a workaround) -->.**
-
-
-<dl><dt><a name="travis-ci" href="https://travis-ci.com">Travis CI</a></dt><dd>
-
+#### [Travis CI][] ####
 Add the following line to your project's [`.travis.yml`][] file:
 
 ~~~yaml
 script: curl -sL https://git.io/fji1w | sh
 ~~~
 
-</dd><dt><a name="github-actions" href="https://docs.github.com/en/actions/reference">GitHub Actions</a></dt><dd>
 
-Add a step to your project's workflow to execute the aforementioned command:
+#### [GitHub Actions][] ####
+Add one or both of the following steps to your project's workflow:
 
 ~~~yaml
 steps:
-  - name: Run package tests
-    run: curl -sL https://git.io/fji1w | sh
+  - name:  Run package tests (macOS, Linux)
+    run:   curl -sL https://git.io/fji1w | sh
+    shell: sh
+
+  - name:  Run package tests (Windows)
+    run:   (New-Object net.WebClient).DownloadString("https://git.io/JWdh6") | iex
+    shell: powershell
 ~~~
 
 A more complete workflow example can be found [here](`.github/workflows/ci.yml`).
-
-</dd></dt>
 
 
 Features
@@ -121,9 +114,7 @@ To-do list
 
 *   [ ] **Support nested groups in GitHub Actions, if/when it becomes possible**
 
-*	[ ] **Learn PowerShell and write a version of this for [AppVeyor][]**  
-	Not a huge priority at the moment, as the AppVeyor integration provided
-	by [`atom/ci`][] is currently working fine.
+*	[ ] **Document and dogfood AppVeyor usage**
 
 
 Background
@@ -145,8 +136,9 @@ Atom's [releases page](https://github.com/atom/atom/releases/latest) on GitHub.
 I was unsure what the link usually pointed to, but having this break the builds
 of each of my projects was certainly *not* the intended outcome.
 
-Since I'm blocked from the @atom org on GitHub, I was unable to report this or
-submit a pull-request. So, as usual, I took things into my own hands.
+Since I'm blocked from the [**@atom**](https://github.com/atom) org on GitHub,
+I was unable to report this or submit a pull-request. So I took things into my
+own hands, as usual.
 
 
 

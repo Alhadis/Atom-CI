@@ -10,10 +10,12 @@ if($null -eq $env:ATOM_PATH){
 }
 
 title "Running tasks"
+$use = $null -ne $env:ATOM_CI_USE_PACKAGE_SCRIPTS
+
 
 # Run "lint" script if one exists in `package.json`
-if(haveScript "lint"){
-	cmd "$env:NPM_SCRIPT_PATH" run lint
+if($use -and (haveScript "lint")){
+	runScript "lint"
 }
 # If not, use assumed defaults
 else{
@@ -22,7 +24,7 @@ else{
 		Write-Host "Linting package with $linter..."
 		for($dir -in "lib", "src", "spec", "test"){
 			if(isDir $dir){
-				cmd "npx" $linter "./$dir"
+				cmd "npx" $linter $dir
 			}
 		}
 	}
@@ -30,15 +32,14 @@ else{
 
 
 # Run the `package.json` "test" script if one exists
-if(haveScript "test"){
-	cmd "$env:NPM_SCRIPT_PATH" run test
+if($use -and (haveScript "test")){
+	runScript "test"
 }
-# If not, locate test-suite manually
 else{
 	foreach($dir in "spec", "specs", "test", "tests"){
 		if(isDir $dir){
 			Write-Host "Running specs..."
-			cmd "$env:ATOM_SCRIPT_PATH" --test "./$dir"
+			cmd "$env:ATOM_SCRIPT_PATH" --test $dir 2>&1 | % { "$_" }
 			break
 		}
 	}

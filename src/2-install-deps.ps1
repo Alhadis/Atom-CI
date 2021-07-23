@@ -13,7 +13,7 @@ if($null -eq $env:ATOM_PATH){
 function showVersions(){
 	param ([Switch] $all)
 	Write-Host "Printing version info"
-	cmd "$env:ATOM_SCRIPT_PATH" --version
+	cmd "$env:ATOM_SCRIPT_PATH" --version | Out-String
 	cmd "$env:APM_SCRIPT_PATH"  --version --no-color
 	if(-not $all){ return }
 	cmd node --version

@@ -7,6 +7,7 @@ if($null -eq $env:ATOM_PATH){
 	$VerbosePreference = "Continue"
 }
 
+"Working directory: {0}[4m{1}{0}[24m" -f [char]0x1B, (Get-Location) | Write-Host
 assertValidProject
 setupEnvironment
 
@@ -23,6 +24,10 @@ else{
 
 # Extract files
 unzip "atom.zip" $env:ATOM_PATH
+
+# Create wrapper for Atom binary
+$wrapper = Join-Path (Split-Path $env:NPM_SCRIPT_PATH) "atom"
+makeWrapper $env:ATOM_SCRIPT_PATH $wrapper
 
 # Dump environment variables
 if($env:TRAVIS_JOB_ID -or $env:GITHUB_ACTIONS -or $env:ATOM_CI_DUMP_ENV){
