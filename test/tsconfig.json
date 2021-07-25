@@ -1,0 +1,21 @@
+{
+	"alwaysStrict": true,
+	"inlineSources": true,
+	"isolatedModules": true,
+	"module": "UMD",
+	"newLine": "lf",
+	"noEmitHelpers": true,
+	"noImplicitAny": true,
+	"noImplicitReturns": true,
+	"noImplicitThis": true,
+	"noLib": true,
+	"noUnusedLocals": true,
+	"noUnusedParameters": true,
+	"outFile": "index.js",
+	"removeComments": true,
+	"sourceMap": true,
+	"strictFunctionTypes": true,
+	"strictNullChecks": true,
+	"strictPropertyInitialization": true,
+	"target": "ESNext"
+}

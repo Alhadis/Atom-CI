@@ -29,8 +29,11 @@ function cmdfmt(){
 
 # Print a command before executing it
 function cmd(){
-	$name = $args[0]
-	$argv = $args[1..($args.length - 1)]
+	param (
+		[Parameter(HelpMessage = "Don't terminate upon exiting with an error code")] [Switch] $noExit,
+		[Parameter(Position = 0, Mandatory = $true)] [String] $name,
+		[Parameter(Position = 1, ValueFromRemainingArguments)] [String[]] $argv
+	)
 	cmdfmt $name @argv
 	
 	# HACK: Fix double-quote stripping
@@ -38,6 +41,11 @@ function cmd(){
 		$argv = $argv.forEach{$_ -replace '"', '"""'}
 	}
 	& "$name" @argv
+	
+	# Handle non-zero exit codes manually
+	if((-not $noExit) -and ($LASTEXITCODE -ne 0)){
+		exit $LASTEXITCODE
+	}
 }
 
 # Return true if a path exists on disk
@@ -114,17 +122,88 @@ function mkdirp(){
 	}
 }
 
+# Convert an absolute path to a relative one if possible
+function shortenPath(){
+	param (
+		[Parameter(Mandatory = $true, HelpMessage = "Filesystem path to shorten")]
+		[String] $path,
+		
+		[Parameter(HelpMessage = "Don't shorten paths located above current directory.")]
+		[Switch] $noParents,
+		
+		[Parameter(HelpMessage = "Don't prefix child directories with './' or '.\'")]
+		[Switch] $noPrefix
+	)
+	$sep = [System.IO.Path]::DirectorySeparatorChar
+	$abs = [System.IO.Path]::IsPathRooted($path)
+	$cwd = (Get-Location).toString()
+	
+	# Trim trailing path separator
+	if(($path.length -gt 0) -and (-not $abs) -and ($sep -eq $path[-1])){
+		$path = $path.substring(0, $path.length - 1)
+	}
+	
+	# Truncate absolute paths if doing so incurs no loss of ambiguity
+	if($abs){
+		if($path -eq $home){ return "~" }
+		if($path -eq $cwd) { return "." }
+		if($path.startsWith($cwd + $sep)){
+			if($noPrefix){ return $path.substring($cwd.length + 1) }
+			return "." + $path.substring($cwd.length)
+		}
+		if($path.startsWith($home + $sep)){
+			return "~" + $path.substring($home.length)
+		}
+	}
+	if($null -ne ([System.IO.Path] | Get-Member -static "GetRelativePath")){
+		$rel = [System.IO.Path]::GetRelativePath($cwd, $path)
+		if($noParents -and ($rel -eq ".." -or $rel.startsWith("..$sep")))   { return $path }
+		if($noPrefix -and ($rel.length -gt 2) -and $rel.startsWith(".$sep")){ $rel = $rel.substring(2) }
+		return $rel
+	}
+	$path
+}
+
+# Set the default output encoding to UTF-8
+function setEncoding(){
+	param ($encoding = "UTF8")
+	$enc = [System.Text.Encoding]
+	if($encoding -isnot $enc){ $encoding = $enc::$encoding }
+	[Console]::OutputEncoding = $encoding
+	$OutputEncoding           = $encoding
+}
+
+# List environment variables
+function dumpEnv(){
+	$env = [Environment]::GetEnvironmentVariables()
+	$env.keys | Sort-Object | % {
+		[PSCustomObject] @{ Name = $_; Value = $env[$_] }
+	} | Format-Table -Wrap
+}
+
 # Set the value of an environment variable
 function setEnv(){
-	param ($name, $value = "")
+	param ([Parameter(Mandatory = $true)] [String] $name, $value = "", [Switch] $default)
+	if($default -and ($null -ne [Environment]::GetEnvironmentVariable($name))){ return }
+	if($value -eq $null){ return unsetEnv $name }
+	$value = [String] $value
 	Write-Verbose "Environment variable $name set to $value"
 	New-Variable -Name "env:$name" -Value $value -Scope "Global" -Visibility "Public"
 	[Environment]::SetEnvironmentVariable($name, $value, "Process")
 }
 
+# Delete an environment variable
+function unsetEnv(){
+	param ($name)
+	if($null -eq [Environment]::GetEnvironmentVariable($name)){ return }
+	Write-Verbose "Unsetting environment variable $name"
+	Remove-Variable -Name "env:$name" -Scope "Global" -Force
+	[Environment]::SetEnvironmentVariable($name, $null)
+}
+
 # Extract the contents of a ZIP archive
 function unzip(){
-	param ($archive, $destination = ".")
+	param ($archive, $destination = ".", [Switch] $noOverwrite)
 	
 	# Expand relative paths to absolute ones
 	$us  = [char]0x1B + "[4m"
@@ -132,6 +211,10 @@ function unzip(){
 	$cwd = Get-Location
 	if(-not (Split-Path -Path $archive     -IsAbsolute)){ $archive     = Join-Path $cwd $archive }
 	if(-not (Split-Path -Path $destination -IsAbsolute)){ $destination = Join-Path $cwd $destination }
+	if($noOverwrite -and (isDir $destination) -and ($cwd -ne (Resolve-Path $destination))){
+		Write-Host "Extraction directory $us$destination$ue already exists, skipping"
+		return
+	}
 	Write-Host "Extracting $us$archive$ue to $us$destination$ue..."
 	
 	# Delete and recreate target directory
@@ -148,7 +231,9 @@ function unzip(){
 		if($null -eq $unzip){
 			die "Unzip utility required to unpack archive containing symlinks"
 		}
-		cmd "$unzip" -oq $archive -d $destination
+		$flags = "-oq"
+		if($noOverwrite){ $flags = "-nq" }
+		cmd "$unzip" "$flags" $archive "-d" $destination
 	}
 }
 
@@ -286,30 +371,12 @@ function assertValidProject(){
 function haveDep(){
 	param ($name)
 	$pkg = json "package.json"
-	$pkg.contains("devDependencies") -and $pkg.devDependencies.contains($name)
-}
-
-# Check if a project's `package.json` file defines a script with the given name
-function haveScript(){
-	param ($name)
-	$pkg = json "package.json"
-	$pkg.contains("scripts") -and $pkg.scripts.contains($name)
-}
-
-# Execute a script defined in a project's `package.json` file
-function runScript(){
-	param ($name, [Switch] $ifPresent)
-	$pkg = json "package.json"
-	if(-not $pkg.scripts.contains($name)){
-		if($ifPresent){ return }
-		die "No such script: $name"
+	foreach($key in "devDependencies", "dependencies"){
+		if($pkg.contains($key) -and $pkg[$key].contains($name)){
+			return $true
+		}
 	}
-	Write-Host ('Running "{0}" script defined in `package.json`' -f $name)
-	$src  = $pkg.scripts[$name]
-	$path = $env:PATH
-	setEnv "PATH" "node_modules\.bin;$env:PATH"
-	try     { Invoke-Expression $src 2>&1 | % {"$_"} }
-	finally { setEnv "PATH" $path }
+	return $false
 }
 
 # Retrieve the tag-name for the latest Atom release
@@ -387,69 +454,6 @@ function downloadAtom(){
 	throw "Failed to resolve asset URL"
 }
 
-# Create a wrapper script to invoke another executable
-function makeWrapper(){
-	param (
-		[Parameter(Mandatory = $true)] [String] $target,
-		[Parameter(Mandatory = $true)] [String] $base
-	)
-	startFold 'wrapper' 'Generating wrapper scripts'
-	$us = [char]0x1B + "[4m"
-	$ue = [char]0x1B + "[24m"
-	"Target binary: {0}$target{1}" -f $us, $ue | Write-Host
-	
-	$scripts = @{
-		# PowerShell script that collects all output emitted by target before displaying it
-		".ps1" = @(
-			'#!/usr/bin/env pwsh'
-			'Set-StrictMode -Version Latest'
-			'$ErrorActionPreference = "Stop"'
-			('& "{0}" --test spec 2>&1' -f $target) + ' | % { "$_" }'
-		) -join [System.Environment]::NewLine
-		
-		# Batch-file which only exists to satisfy $env:ComSpec
-		".cmd" = @(
-			'@echo off'
-			'powershell -File "{0}.ps1" %*' -f $base
-		) -join "`r`n"
-		
-		# POSIX shell-script, which only exists to satisfy my OCD
-		"" = @(
-			'#!/bin/sh'
-			'set -e'
-			'exec pwsh -File "{0}.ps1" -- "$@"' -f $base
-		) -join "`n"
-	}
-	foreach($ext in $scripts.keys){
-		$src  = $scripts[$ext]
-		$path = $base + $ext
-		
-		# Preserve timestamps by only writing to disk if script doesn't exist
-		if((isFile $path) -and ((Get-Content -Encoding "UTF8" -Raw $path).trimEnd() -ceq "$src".trimEnd())){
-			"Already generated: {0}$path{1}" -f $us, $ue | Write-Host
-			continue
-		}
-		# Generate a wrapper with some spiffy-looking feedback
-		else{
-			rmrf $path
-			"Writing: {0}$path{1}" -f $us, $ue | Write-Host
-			New-Item -ItemType "File" -Path $path -Force -Value $src > $null
-			$num = 1
-			foreach($line in $src -split '\r?\n'){
-				$div = [char]0x2502
-				Write-Host -ForegroundColor Gray     -NoNewline ($num++)
-				Write-Host -ForegroundColor DarkGray -NoNewline "$div "
-				Write-Host -ForegroundColor DarkCyan $line
-			}
-			# Set executable bit if running on a POSIX system
-			if(($src.substring(0, 2) -eq "#!") -and ($IsMacOS -or $IsLinux)){
-				cmd chmod +x $path
-			}
-		}
-	}
-	endFold 'wrapper'
-}
-
 # Setup environment variables
 function setupEnvironment(){
 	$folded = $false
@@ -458,8 +462,10 @@ function setupEnvironment(){
 		$folded = $true
 	}
 	
-	setEnv "ELECTRON_NO_ATTACH_CONSOLE" "true"
-	setEnv "ELECTRON_ENABLE_LOGGING" "YES"
+	# Set some reasonable defaults for an Atom project
+	setEnv -default "ELECTRON_NO_ATTACH_CONSOLE" "true"
+	setEnv -default "ELECTRON_ENABLE_LOGGING" $null
+	setEnv -default "NODE_NO_WARNINGS" 1
 
 	# Resolve what version of Atom we're downloading
 	if($env:ATOM_RELEASE){
@@ -505,11 +511,12 @@ function setupEnvironment(){
 		$atomPath   = Join-Path (Get-Location) ".atom-ci"
 		$scriptName = "atom.sh"
 		$scriptPath = "$atomPath/$appName/Contents/Resources/app/$scriptName"
-		$npmPath    = "$scriptPath/apm/node_modules/.bin"
-		$apmPath    = "$npmPath/apm"
-		setEnv "PATH" "${npmPath}:${env:PATH}"
+		$binPath    = "$atomPath/$appName/Contents/Resources/app/apm/node_modules/.bin"
+		$apmPath    = "$binPath/apm"
+		$npmPath    = "$binPath/npm"
+		setEnv "PATH" "${binPath}:${env:PATH}"
 		setEnv "ATOM_APP_NAME" $appName
-		$npmPath += "/npm"
+		setEnv "ATOM_EXE_PATH" $scriptPath
 	}
 	# Linux (Debian assumed)
 	elseif($IsLinux){
@@ -559,5 +566,5 @@ catch{
 	New-Variable -Name "IsMacOS"   -Scope "Global" -Option ReadOnly,AllScope -Visibility "Public" -Value $false
 }
 
-# Set the default encoding to UTF-8
-$OutputEncoding = "utf8"
+# Fix display of Unicode characters
+setEncoding "UTF8"

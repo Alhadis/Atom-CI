@@ -1,0 +1,16 @@
+{
+	"extends": "eslint:recommended",
+	"env": {
+		"mocha": true,
+		"node": true
+	},
+	"rules": {
+		"no-console": 0
+	},
+	"parserOptions": {
+		"ecmaVersion": 2021
+	},
+	"globals": {
+		"it": true
+	}
+}

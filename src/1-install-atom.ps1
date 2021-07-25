@@ -14,28 +14,21 @@ setupEnvironment
 # Download Atom
 if($env:ATOM_RELEASE){
 	startFold "install-atom" "Installing Atom ($env:ATOM_RELEASE)"
-	downloadAtom -reuseExisting -release $env:ATOM_RELEASE $env:ATOM_ASSET_NAME -saveAs "atom.zip"
+	downloadAtom -release $env:ATOM_RELEASE $env:ATOM_ASSET_NAME -reuseExisting
 }
 else{
 	$channel = $env:ATOM_CHANNEL.tolower()
 	startFold "install-atom" "Installing Atom (Latest $channel release)"
-	downloadAtom -reuseExisting -channel $channel $env:ATOM_ASSET_NAME -saveAs "atom.zip"
+	downloadAtom -channel $channel $env:ATOM_ASSET_NAME -reuseExisting
 }
 
 # Extract files
-unzip "atom.zip" $env:ATOM_PATH
-
-# Create wrapper for Atom binary
-$wrapper = Join-Path (Split-Path $env:NPM_SCRIPT_PATH) "atom"
-makeWrapper $env:ATOM_SCRIPT_PATH $wrapper
+unzip $env:ATOM_ASSET_NAME $env:ATOM_PATH -noOverwrite
 
 # Dump environment variables
 if($env:TRAVIS_JOB_ID -or $env:GITHUB_ACTIONS -or $env:ATOM_CI_DUMP_ENV){
 	startFold 'env-dump' 'Dumping environment variables'
-	$env = [Environment]::GetEnvironmentVariables()
-	$env.keys | Sort-Object | % {
-		[PSCustomObject] @{ Name = $_; Value = $env[$_] }
-	} | Format-Table -Wrap
+	dumpEnv
 	endFold 'env-dump'
 }
 
