@@ -13,7 +13,7 @@ This is a script for setting up continuous integration with an Atom project.
 Usage
 -----
 
-#### [Travis CI][] ####
+#### [Travis CI][] ####
 Add the following line to your project's [`.travis.yml`][] file:
 
 ~~~yaml
@@ -21,7 +21,7 @@ script: curl -sL https://git.io/fji1w | sh
 ~~~
 
 
-#### [GitHub Actions][] ####
+#### [GitHub Actions][] ####
 Add one or both of the following steps to your project's workflow:
 
 ~~~yaml
