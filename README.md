@@ -112,7 +112,7 @@ To-do list
 ----------
 *	[ ] **Support the `atom-mocha` executable, once it can be run globally**  
 
-*   [ ] **Support nested groups in GitHub Actions, if/when it becomes possible**
+*	[ ] **Test PowerShell version on Linux**
 
 *	[ ] **Document and dogfood AppVeyor usage**
 

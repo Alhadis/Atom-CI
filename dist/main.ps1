@@ -591,7 +591,7 @@ else{
 unzip "atom.zip" $env:ATOM_PATH
 
 # Dump environment variables
-if($env:TRAVIS_JOB_ID -or $env:GITHUB_ACTIONS -or $env:ATOM_CI_DUMP_ENV){
+if($env:TRAVIS_JOB_ID -or $env:GITHUB_ACTIONS -or $env:APPVEYOR -or $env:ATOM_CI_DUMP_ENV){
 	startFold 'env-dump' 'Dumping environment variables'
 	dumpEnv
 	endFold 'env-dump'
