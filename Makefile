@@ -24,7 +24,7 @@ dist/main.ps1: src/*.psm1 src/*.ps1
 	printf  > $@ '#!/usr/bin/env pwsh\n'
 	printf >> $@ 'Set-StrictMode -Version Latest\n'
 	printf >> $@ '$$ErrorActionPreference = "Stop"\n\n'
-	cat $^ | sed -f src/strip.sed | cat -s >> $@
+	cat $^ | sed -f src/strip.sed | sed -f src/pwsh-prod.sed | cat -s >> $@
 	chmod +x $@
 	test -n "$$WATCHMAN_ROOT" || $(ps-lint) -Path $@
 
