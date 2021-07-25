@@ -18,14 +18,14 @@ jobs:
 
             - name:  Run package tests (macOS, Linux)
               if:    ${{ startsWith(matrix.os, 'macOS') || startsWith(matrix.os, 'Ubuntu') }}
-              run:   curl -sL https://git.io/fji1w | sh
+              run:   cd test && sh < ../dist/main.sh
               shell: sh
               env:
                   ATOM_CHANNEL: ${{ matrix.channel }}
 
             - name:  Run package tests (Windows)
               if:    ${{ startsWith(matrix.os, 'Windows') }}
-              run:   (New-Object net.WebClient).DownloadString("https://git.io/JWdh6") | iex
+              run:   Set-Location "test"; & ../dist/main.ps1
               shell: powershell
               env:
                   ATOM_CHANNEL: ${{ matrix.channel }}
