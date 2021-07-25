@@ -5,7 +5,9 @@ branches:
 git:
     depth: 10
 
-language: cpp
+language: node_js
+
+node_js: 12
 
 matrix:
     include:
@@ -37,5 +39,6 @@ notifications:
         on_success: change
         on_failure: change
 
-script: |
-    cd test && sh < ../dist/main.sh
+script:
+    - node --version
+    - cd test && sh < ../dist/main.sh
