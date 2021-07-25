@@ -27,10 +27,12 @@ Add one or both of the following steps to your project's workflow:
 ~~~yaml
 steps:
   - name:  Run package tests (macOS, Linux)
+    if:    ${{ startsWith(matrix.os, 'macOS') || startsWith(matrix.os, 'Ubuntu') }}
     run:   curl -sL https://git.io/fji1w | sh
     shell: sh
 
   - name:  Run package tests (Windows)
+    if:    ${{ startsWith(matrix.os, 'Windows') }}
     run:   (New-Object net.WebClient).DownloadString("https://git.io/JWdh6") | iex
     shell: powershell
 ~~~
@@ -110,11 +112,11 @@ you include `libgconf2-4` as a dependency:
 
 To-do list
 ----------
-*	[ ] **Support the `atom-mocha` executable, once it can be run globally**  
-
-*	[ ] **Test PowerShell version on Linux**
-
-*	[ ] **Document and dogfood AppVeyor usage**
+* [ ] **Support the `atom-mocha` executable, once it can be run globally**
+* [ ] **Test PowerShell version on Linux**
+* [ ] **Use GitHub's `[command]` syntax for echoing external commands**
+* [ ] **Make POSIX version's `$PATH` tampering consistent with PowerShell's**
+* [ ] **Document and dogfood AppVeyor usage**
 
 
 Background

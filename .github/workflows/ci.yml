@@ -15,7 +15,17 @@ jobs:
                 channel: [stable, beta]
         steps:
             - uses: actions/checkout@v2
-            - name: Run package tests
-              run: cd test && curl -sL https://git.io/fji1w | sh
+
+            - name:  Run package tests (macOS, Linux)
+              if:    ${{ startsWith(matrix.os, 'macOS') || startsWith(matrix.os, 'Ubuntu') }}
+              run:   curl -sL https://git.io/fji1w | sh
+              shell: sh
+              env:
+                  ATOM_CHANNEL: ${{ matrix.channel }}
+
+            - name:  Run package tests (Windows)
+              if:    ${{ startsWith(matrix.os, 'Windows') }}
+              run:   (New-Object net.WebClient).DownloadString("https://git.io/JWdh6") | iex
+              shell: powershell
               env:
                   ATOM_CHANNEL: ${{ matrix.channel }}
