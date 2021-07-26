@@ -777,4 +777,5 @@ if($dir){
 	# HACK: Using `cmd` to invoke Atom doesn't work on Windows. I've NFI why
 	cmdfmt $env:ATOM_EXE_PATH --test $dir
 	& $env:ATOM_EXE_PATH --test $dir 2>&1 | % { "$_" }
+	exit $LASTEXITCODE
 }
