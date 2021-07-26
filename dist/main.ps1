@@ -497,7 +497,7 @@ function setupEnvironment(){
 			$scriptName = "atom-beta"
 		}
 		$atomPath   = Join-Path (Get-Location) "_atom-ci"
-		$scriptPath = "$atomPath\$appName\resources\cli\$scriptName.cmd"
+		$scriptPath = "$atomPath\$appName\resources\cli\atom.cmd"
 		$apmPath    = "$atomPath\$appName\resources\app\apm\bin\apm.cmd"
 		$npmPath    = "$atomPath\$appName\resources\app\apm\node_modules\.bin"
 		setEnv "PATH" "$npmPath;${env:PATH}"
