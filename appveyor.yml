@@ -10,7 +10,7 @@ branches:
     only: [master, main, ci]
 
 test_script:
-    - ps: (New-Object net.WebClient).DownloadString("https://git.io/JWdh6") | iex
+    - ps: Set-Location "test"; (New-Object net.WebClient).DownloadString("https://git.io/JWdh6") | iex
 
 environment:
     global:
