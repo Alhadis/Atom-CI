@@ -2,6 +2,7 @@
 
 Atom CI
 =======
+[![Build status: AppVeyor][AppVeyor-badge]][AppVeyor-link]
 [![Build status: GitHub Actions][Actions-badge]][Actions-link]
 [![Build status: Travis CI][TravisCI-badge]][TravisCI-link]
 
@@ -150,6 +151,8 @@ own hands, as usual.
 [Live-example]:   https://app.travis-ci.com/github/Alhadis/Atom-FormFeeds/jobs/523013011#L80
 [Actions-badge]:  https://img.shields.io/github/workflow/status/Alhadis/Atom-CI/Atom%20CI?label=GitHub%20Actions&logo=github
 [Actions-link]:   https://github.com/Alhadis/Atom-CI/actions
+[AppVeyor-badge]: https://img.shields.io/appveyor/build/Alhadis/Atom-CI?label=AppVeyor&logo=appveyor&logoColor=%23ccc
+[AppVeyor-link]:  https://ci.appveyor.com/project/Alhadis/Atom-CI
 [TravisCI-badge]: https://img.shields.io/travis/com/Alhadis/Atom-CI?label=Travis%20CI&logo=travis
 [TravisCI-link]:  https://travis-ci.com/Alhadis/Atom-CI
 [`.travis.yml`]: https://docs.travis-ci.com/user/tutorial
