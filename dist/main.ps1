@@ -670,7 +670,7 @@ function apmInstall(){
 		cmd "$env:APM_SCRIPT_PATH" install @args
 		$output = cmd "$env:APM_SCRIPT_PATH" clean
 	}
-	$output = $output | Out-String | gsub '(\u2713)(\r?\n)(.*)\k<2>?$' '$1$3$2'
+	$output = $output | Out-String | gsub '(\e\[\d[;\d]*m[^[:cntrl:][:blank:]]+)(\r?\n)(.*)\k<2>?$' '$1$3$2'
 	Write-Host $output.trim()
 }
 

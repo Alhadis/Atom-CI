@@ -378,14 +378,15 @@ showVersions(){
 apmInstall(){
 	endFold 'installers'
 	startFold 'install-deps' 'Installing dependencies'
-	set -- "$1" "`sgr 4`" "`sgr 24`" '/✓$/{N;s/\n//;s/$/\n/;}'
+	set -- "$1" "`sgr 4`" "`sgr 24`" \
+	/"`printf '\e'`"\\['[0-9][;0-9]*m[^[:cntrl:][:blank:]]\{1,\}$/{N;s/\n//;s/$/\n/;}'
 	if [ -f package-lock.json ] && apmHasCI; then
 		printf 'Installing from %s%s%s\n' "$2" package-lock.json "$3"
 		cmd "${APM_SCRIPT_PATH}" ci $1 | sed "$4"
 	else
 		printf 'Installing from %s%s%s\n' "$2" package.json "$3"
-		cmd "${APM_SCRIPT_PATH}" install $1
-		cmd "${APM_SCRIPT_PATH}" clean | sed "$4"
+		cmd "${APM_SCRIPT_PATH}" install $1 | sed "$4"
+		cmd "${APM_SCRIPT_PATH}" clean      | sed "$4"
 	fi
 }
 
