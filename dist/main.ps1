@@ -10,43 +10,34 @@ function title(){
 	Write-Host $text
 }
 
+# Quote a command-line argument for console display
+function argfmt(){
+	process {
+		if($_ -match '^(?![~#\[])[-+#:@^~\w\\/\[\].]+$'){ return $_ }
+		if(-not $_.contains("'")){ return "'$_'" }
+		'"' + ($_ -replace '[$"`@]', '`$&') + '"'
+	}
+}
+
 # Embellish and echo a command that's about to be executed
 function cmdfmt(){
-	param (
-		[Parameter(Position = 0, Mandatory = $true)] [String] $name,
-		[Parameter(Position = 1, ValueFromRemainingArguments)] [String[]] $argv
-	)
-	$bareword = '^(?![~#])[-+#:@^~\w]+$'
 	if($env:GITHUB_ACTIONS){
-		if($name -notmatch $bareword){ $name = '"{0}"' -f $name }
-		if($null -ne $argv){
-			
-			# Coerce solitary arguments into an array
-			if($argv.getType().name -eq "String"){ $argv = @($argv) }
-			
-			# Quote each argument for console display
-			$argv = ($argv | ForEach-Object {
-				if($_ -match $bareword)   { return $_ }
-				if(-not $_.contains("'")) { return "'$_'" }
-				'"' + ($_ -replace '[$"`@]', '`$&') + '"'
-			}) -join " "
-		}
-		$argv = if($argv){" $argv"} else{""}
-		"[command]{0}{1}" -f $name, "$argv" | Write-Host
+		$argv = ($args | argfmt) -join " "
+		"[command]{0}" -f "$argv" | Write-Host
 		return
 	}
-	$ps = "$"
-	if($IsWindows){ $ps = ">" }
+	$ps = if($IsWindows){">"} else{"$"}
 	Write-Host -NoNewline -ForegroundColor DarkGreen $ps
-	Write-Host -NoNewline -ForegroundColor Green " $name"
-	foreach($arg in $argv){
-		if($arg -match $bareword){
-			Write-Host -NoNewline -ForegroundColor Green " $arg"
+	$args | ForEach-Object {
+		Write-Host -NoNewline " "
+		$arg = $_ | argfmt
+		if($arg -ceq $_){
+			Write-Host -NoNewline -ForegroundColor Green $arg
 		}
 		else{
-			Write-Host -NoNewline -ForegroundColor DarkGreen ' "'
-			Write-Host -NoNewline -ForegroundColor Green     "$arg"
-			Write-Host -NoNewline -ForegroundColor DarkGreen '"'
+			Write-Host -NoNewline -ForegroundColor DarkGreen $arg[0]
+			Write-Host -NoNewline -ForegroundColor Green     $arg.substring(1, $arg.length - 2)
+			Write-Host -NoNewline -ForegroundColor DarkGreen $arg[-1]
 		}
 	}
 	Write-Host ""

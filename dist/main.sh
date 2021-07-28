@@ -57,12 +57,26 @@ title(){
 	printf '%s==>%s %s%s%s\n' "$2" "$4" "$3" "$1" "$4"
 }
 
-# Print a colourful shell-command prefixed by a "$ "
+# Quote command-line arguments for console display
+argfmt(){
+	while [ $# -gt 0 ]; do case $1 in *'
+'*) printf \'; printf %s "$1" | sed s/\''/&\\&&/g'; printf \' ;;
+	*) printf %s "$1" | sed ':x
+	/^[]+:@^_[:alnum:][=[=]/.-][]~#+:@^_[:alnum:][=[=]/.-]*$/!{
+		/^[]~#+:@^_[:alnum:][=[=]/.-]*[^]~#+:@^_[:alnum:][=[=]/.-][]~#+:@^_[:alnum:][=[=]/.-]*$/{
+			/^--*.*=/!s/[^]~#+:@^_[:alnum:][=[=]/.-]/\\&/;;n;bx
+		}; /'\''/! {s/^/'\''/;s/$/'\''/;n;bx
+	}; s/[$"\\@]/\\&/g;s/^/"/;s/$/"/;}' ;;
+	esac; shift; [ $# -eq 0 ] || printf ' '; done
+}
+
+# Embellish and echo a command that's about to be executed
 cmdfmt(){
+	set -- "`argfmt "$@"`"
 	if [ "$GITHUB_ACTIONS" ]; then
-		printf '[command]%s\n' "$*"
+		printf '[command]%s\n' "$1"
 	else
-		printf '%s$ %s%s\n' "`sgr 32`" "$*" "`sgr`"
+		printf '%s$ %s%s\n' "`sgr 32`" "$1" "`sgr`"
 	fi
 }
 
