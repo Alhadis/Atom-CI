@@ -284,6 +284,11 @@ else
 	esac
 fi
 
+# Silence annoying deprecation messages from Electron, unless explicitly enabled
+if [ ! "${NODE_NO_WARNINGS+1}" ]; then
+	export NODE_NO_WARNINGS=1
+fi
+
 # GitHub Actions: Force 16-colour support unless explicitly disabled
 if [ "$GITHUB_ACTIONS" ] && [ ! "${NO_COLOR+1}${NO_COLOUR+2}" ]; then
 	export FORCE_COLOR=1
