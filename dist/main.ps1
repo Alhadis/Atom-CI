@@ -12,14 +12,35 @@ function title(){
 
 # Embellish and echo a command that's about to be executed
 function cmdfmt(){
-	$name = $args[0]
-	$argv = $args[1..($args.length - 1)]
+	param (
+		[Parameter(Position = 0, Mandatory = $true)] [String] $name,
+		[Parameter(Position = 1, ValueFromRemainingArguments)] [String[]] $argv
+	)
+	$bareword = '^(?![~#])[-+#:@^~\w]+$'
+	if($env:GITHUB_ACTIONS){
+		if($name -notmatch $bareword){ $name = '"{0}"' -f $name }
+		if($null -ne $argv){
+			
+			# Coerce solitary arguments into an array
+			if($argv.getType().name -eq "String"){ $argv = @($argv) }
+			
+			# Quote each argument for console display
+			$argv = ($argv | ForEach-Object {
+				if($_ -match $bareword)   { return $_ }
+				if(-not $_.contains("'")) { return "'$_'" }
+				'"' + ($_ -replace '[$"`@]', '`$&') + '"'
+			}) -join " "
+		}
+		$argv = if($argv){" $argv"} else{""}
+		"[command]{0}{1}" -f $name, "$argv" | Write-Host
+		return
+	}
 	$ps = "$"
 	if($IsWindows){ $ps = ">" }
 	Write-Host -NoNewline -ForegroundColor DarkGreen $ps
 	Write-Host -NoNewline -ForegroundColor Green " $name"
 	foreach($arg in $argv){
-		if($arg -match '^(?![~#])[-+#:@^~\w]+$'){
+		if($arg -match $bareword){
 			Write-Host -NoNewline -ForegroundColor Green " $arg"
 		}
 		else{

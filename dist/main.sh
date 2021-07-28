@@ -59,7 +59,11 @@ title(){
 
 # Print a colourful shell-command prefixed by a "$ "
 cmdfmt(){
-	printf '%s$ %s%s\n' "`sgr 32`" "$*" "`sgr`"
+	if [ "$GITHUB_ACTIONS" ]; then
+		printf '[command]%s\n' "$*"
+	else
+		printf '%s$ %s%s\n' "`sgr 32`" "$*" "`sgr`"
+	fi
 }
 
 # Print a command before executing it
