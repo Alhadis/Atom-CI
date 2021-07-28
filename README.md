@@ -22,6 +22,18 @@ script: curl -sL https://git.io/fji1w | sh
 ~~~
 
 
+#### [AppVeyor][] ####
+Add the following lines to your project's [`appveyor.yml`][] file:
+
+~~~yaml
+install:
+  - ps: Install-Product node $env:nodejs_version
+
+test_script:
+  - ps: (New-Object net.WebClient).DownloadString("https://git.io/JWdh6") | iex
+~~~
+
+
 #### [GitHub Actions][] ####
 Add one or both of the following steps to your project's workflow:
 
@@ -59,11 +71,9 @@ It's fundamentally the same as [`atom/ci`][], with the following differences:
 	  - ATOM_RELEASE=v1.34.0  # Override ATOM_CHANNEL and test specific version
 	~~~
 
-3.	__Only [Travis CI][] and [GitHub Actions][] are supported for now.__
-
-4.	__`lint` or `test` scripts defined in `package.json` are used, if possible.__  
-	If your package manifest defines a `lint` or `test` script, the CI script will
-	call those instead. For example:
+3.	__`lint` or `test` scripts defined in `package.json` are used, if possible.__  
+	If your package manifest defines a `lint` or `test` script, the POSIX version
+	of the CI script will call those instead. For example:
 	~~~json
 	{
 		"scripts": {
@@ -118,7 +128,7 @@ To-do list
 * [ ] **Test PowerShell version on Linux**
 * [x] **Use GitHub's `[command]` syntax for echoing external commands**
 * [x] **Make POSIX version's `$PATH` tampering consistent with PowerShell's**
-* [ ] **Document and dogfood AppVeyor usage**
+* [x] **Document and dogfood AppVeyor usage**
 
 
 Background
@@ -155,6 +165,7 @@ own hands, as usual.
 [AppVeyor-link]:  https://ci.appveyor.com/project/Alhadis/Atom-CI
 [TravisCI-badge]: https://img.shields.io/travis/com/Alhadis/Atom-CI?label=Travis%20CI&logo=travis
 [TravisCI-link]:  https://travis-ci.com/Alhadis/Atom-CI
+[`appveyor.yml`]: https://www.appveyor.com/docs/appveyor-yml/
 [`.travis.yml`]: https://docs.travis-ci.com/user/tutorial
 [`atom/ci`]: https://github.com/atom/ci
 [`atom.io`]: https://atom.io/

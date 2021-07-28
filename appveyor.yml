@@ -11,7 +11,6 @@ branches:
 
 environment:
     global:
-        nodejs_version: 12
         ATOM_CI_PACKAGE_ROOT: test
 
     matrix:
