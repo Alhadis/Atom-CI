@@ -5,7 +5,7 @@ if($null -eq $env:ATOM_PATH){
 	$ErrorActionPreference = "Stop"
 	Import-Module -Name (Join-Path $PSScriptRoot "0-shared.psm1")
 	$VerbosePreference = "Continue"
-	assertValidProject
+	switchToProject
 	setupEnvironment
 }
 

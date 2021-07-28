@@ -6,6 +6,9 @@ on:
     workflow_dispatch:
         # Enable manual execution via Actions tab
 
+env:
+    ATOM_CI_PACKAGE_ROOT: test
+
 jobs:
     build:
         runs-on: ${{ matrix.os }}
@@ -18,14 +21,14 @@ jobs:
 
             - name:  Run package tests (macOS, Linux)
               if:    ${{ startsWith(matrix.os, 'macOS') || startsWith(matrix.os, 'Ubuntu') }}
-              run:   cd test && sh < ../dist/main.sh
+              run:   curl -sL https://git.io/fji1w | sh
               shell: sh
               env:
                   ATOM_CHANNEL: ${{ matrix.channel }}
 
             - name:  Run package tests (Windows)
               if:    ${{ startsWith(matrix.os, 'Windows') }}
-              run:   Set-Location "test"; & ../dist/main.ps1
+              run:   (New-Object net.WebClient).DownloadString("https://git.io/JWdh6") | iex
               shell: powershell
               env:
                   ATOM_CHANNEL: ${{ matrix.channel }}

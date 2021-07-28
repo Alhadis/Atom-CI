@@ -7,7 +7,7 @@ set -e
 
 # shellcheck source=./0-shared.sh
 . "${0%/*}"/0-shared.sh
-assertValidProject # DEBUG
+switchToProject # DEBUG
 
 ATOM_SCRIPT_PATH=${ATOM_SCRIPT_PATH:=atom}
 APM_SCRIPT_PATH=${APM_SCRIPT_PATH:=apm}

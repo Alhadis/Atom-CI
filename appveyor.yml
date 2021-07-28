@@ -9,12 +9,10 @@ skip_tags: true
 branches:
     only: [master, main, ci]
 
-test_script:
-    - ps: Set-Location "test"; (New-Object net.WebClient).DownloadString("https://git.io/JWdh6") | iex
-
 environment:
     global:
         nodejs_version: 12
+        ATOM_CI_PACKAGE_ROOT: test
 
     matrix:
         - ATOM_CHANNEL: stable
@@ -23,3 +21,6 @@ environment:
 install:
     - ps: $PSVersionTable
     - ps: Install-Product node $env:nodejs_version
+
+test_script:
+    - ps: (New-Object net.WebClient).DownloadString("https://git.io/JWdh6") | iex

@@ -7,8 +7,7 @@ if($null -eq $env:ATOM_PATH){
 	$VerbosePreference = "Continue"
 }
 
-"Working directory: {0}[4m{1}{0}[24m" -f [char]0x1B, (Get-Location) | Write-Host
-assertValidProject
+switchToProject
 setupEnvironment
 
 # Download Atom

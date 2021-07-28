@@ -470,6 +470,32 @@ function downloadAtom(){
 	throw "Failed to resolve asset URL"
 }
 
+# Switch working directory to that of the user's project
+function switchToProject(){
+	$dir = $env:ATOM_CI_PACKAGE_ROOT
+	$us  = [char]0x1B + "[4m"
+	$ue  = [char]0x1B + "[24m"
+	if($dir){
+		if((isDir $dir) -and (isFile "$dir/package.json")){
+			$dir = (Resolve-Path $dir).path
+			"Switching to ATOM_CI_PACKAGE_ROOT: $us$dir$ue" | Write-Host
+			Set-Location $dir
+		}
+		else{
+			$msg = '"{1}{0}{2}" is not a valid project directory' -f $dir, $us, $ue
+			$msg = "Ignoring ATOM_CI_PACKAGE_ROOT; $msg"
+			if($env:GITHUB_ACTIONS){ Write-Host "::warning::$msg" }
+			else                   { Write-Warning "$msg" }
+		}
+	}
+	else{
+		$dir = (Get-Location).toString()
+		"Working directory: $us$dir$ue" | Write-Host
+	}
+	setEnv "ATOM_CI_PACKAGE_ROOT" $dir
+	assertValidProject
+}
+
 # Setup environment variables
 function setupEnvironment(){
 	$folded = $false

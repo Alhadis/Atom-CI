@@ -148,6 +148,31 @@ endFold(){
 	fi
 }
 
+# Switch working directory to that of the user's project
+switchToProject(){
+	set -- "`sgr 4`" "$ATOM_CI_PACKAGE_ROOT" "`sgr 24`"
+	if [ "$2" ]; then
+		if [ -s "$2/package.json" ]; then
+			ATOM_CI_PACKAGE_ROOT=`cd "$2" && pwd`
+			set -- "$2" "$1${ATOM_CI_PACKAGE_ROOT}$3"
+			printf 'Switching to ATOM_CI_PACKAGE_ROOT: %s\n' "$2"
+			# shellcheck disable=SC2164
+			cd "$1"
+		else
+			set -- "$1$2$3"
+			if [ "$GITHUB_ACTIONS" ]; then printf '::warning::'; fi
+			printf 'Ignoring $ATOM_CI_PACKAGE_ROOT; "%s" is not a valid project directory\n' "$1"
+			ATOM_CI_PACKAGE_ROOT=`pwd`
+		fi
+	else
+		set -- "$1" "`pwd`" "$3"
+		printf 'Working directory: %s\n' "$1$2$3"
+		ATOM_CI_PACKAGE_ROOT=$2
+	fi
+	export ATOM_CI_PACKAGE_ROOT
+	assertValidProject
+}
+
 # Abort script if current directory lacks a test directory and package.json file
 assertValidProject(){
 	[ -f package.json ] || die 'No package.json file found'
@@ -279,7 +304,7 @@ mkalias(){
 	chmod +x "$2"
 }
 
-assertValidProject
+switchToProject
 
 # Building against a specific release
 if [ "$ATOM_RELEASE" ]; then

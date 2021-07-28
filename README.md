@@ -114,7 +114,7 @@ you include `libgconf2-4` as a dependency:
 To-do list
 ----------
 * [ ] **Support the `atom-mocha` executable, once it can be run globally**
-* [ ] **Support an environment variable for specifying package's root directory**
+* [x] **Support an environment variable for specifying package's root directory**
 * [ ] **Test PowerShell version on Linux**
 * [x] **Use GitHub's `[command]` syntax for echoing external commands**
 * [x] **Make POSIX version's `$PATH` tampering consistent with PowerShell's**

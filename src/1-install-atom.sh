@@ -7,7 +7,7 @@ set -e
 
 # shellcheck source=./0-shared.sh
 . "${0%/*}"/0-shared.sh
-assertValidProject
+switchToProject
 
 # Building against a specific release
 if [ "$ATOM_RELEASE" ]; then
