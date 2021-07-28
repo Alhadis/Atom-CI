@@ -117,7 +117,7 @@ To-do list
 * [ ] **Support an environment variable for specifying package's root directory**
 * [ ] **Test PowerShell version on Linux**
 * [ ] **Use GitHub's `[command]` syntax for echoing external commands**
-* [ ] **Make POSIX version's `$PATH` tampering consistent with PowerShell's**
+* [x] **Make POSIX version's `$PATH` tampering consistent with PowerShell's**
 * [ ] **Document and dogfood AppVeyor usage**
 
 
