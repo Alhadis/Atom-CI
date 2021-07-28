@@ -82,7 +82,7 @@ cmdfmt(){
 
 # Print a command before executing it
 cmd(){
-	cmdfmt "$*"
+	cmdfmt "$@"
 	"$@"
 }
 

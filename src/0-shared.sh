@@ -83,7 +83,7 @@ cmdfmt(){
 
 # Print a command before executing it
 cmd(){
-	cmdfmt "$*"
+	cmdfmt "$@"
 	if [ "$ATOM_CI_DRY_RUN" ]; then return 0; fi # DEBUG
 	"$@"
 }
