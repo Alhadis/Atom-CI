@@ -2,7 +2,11 @@
 function title(){
 	param ([Parameter(Mandatory)] [String] $text)
 	$text = "{0}[1m$text{0}[22m" -f [char]0x1B
-	Write-Host -NoNewline "==> " -ForegroundColor Blue
+	if($env:GITHUB_ACTIONS){
+		$esc = [char]0x1B
+		Write-Host -NoNewline "$esc[34m==> $esc[39m"
+	}
+	else{ Write-Host -NoNewline "==> " -ForegroundColor Blue }
 	Write-Host $text
 }
 

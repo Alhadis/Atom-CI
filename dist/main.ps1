@@ -6,7 +6,11 @@ $ErrorActionPreference = "Stop"
 function title(){
 	param ([Parameter(Mandatory)] [String] $text)
 	$text = "{0}[1m$text{0}[22m" -f [char]0x1B
-	Write-Host -NoNewline "==> " -ForegroundColor Blue
+	if($env:GITHUB_ACTIONS){
+		$esc = [char]0x1B
+		Write-Host -NoNewline "$esc[34m==> $esc[39m"
+	}
+	else{ Write-Host -NoNewline "==> " -ForegroundColor Blue }
 	Write-Host $text
 }
 
@@ -652,17 +656,16 @@ function apmInstall(){
 	$ESC = [char]0x1B
 	$UL  = "$ESC[4m"   # Underlined text
 	$NU  = "$ESC[24m"  # No underline
+	$fix = '(\e\[\d[;\d]*m[^[:cntrl:][:blank:]]+)(\r?\n)([^\r\n]*)\k<2>?$'
 	if((isFile "package-lock.json") -and (apmHasCI)){
 		Write-Host "Installing from ${UL}package-lock.json${NU}"
-		$output = cmd "$env:APM_SCRIPT_PATH" ci @args
+		(cmd "$env:APM_SCRIPT_PATH" ci @args | Out-String | gsub $fix '$1$3$2').trim()
 	}
 	else{
 		Write-Host "Installing from ${UL}package.json${NU}"
-		cmd "$env:APM_SCRIPT_PATH" install @args
-		$output = cmd "$env:APM_SCRIPT_PATH" clean
+		(cmd "$env:APM_SCRIPT_PATH" install @args | Out-String | gsub $fix '$1$3$2').trim()
+		(cmd "$env:APM_SCRIPT_PATH" clean         | Out-String | gsub $fix '$1$3$2').trim()
 	}
-	$output = $output | Out-String | gsub '(\e\[\d[;\d]*m[^[:cntrl:][:blank:]]+)(\r?\n)(.*)\k<2>?$' '$1$3$2'
-	Write-Host $output.trim()
 }
 
 startFold "installers" "Resolving installers"
