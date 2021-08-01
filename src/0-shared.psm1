@@ -64,6 +64,68 @@ function cmd(){
 	}
 }
 
+# Format a string with underlines
+function ul(){
+	param ([String] $message)
+	$us  = [char]0x1B + "[4m"
+	$ue  = [char]0x1B + "[24m"
+	
+	# Read from parameters
+	if($message){
+		# Solitary argument: treat as subject being underlined
+		if(-not ($args -or $args.count)){
+			"{0}{1}{2}" -f $us, $message, $ue
+		}
+		# Multiple arguments: treat first argument as format string
+		else{
+			$argv = $args.foreach({"{0}{1}{2}" -f $us, $_, $ue})
+			[String]::format.invoke(@($message) + $argv)
+		}
+	}
+	
+	# Read from pipeline
+	else{
+		$firstLine = $true
+		$input | ForEach-Object {
+			$message = "{0}{1}{2}" -f $us, $_.toString(), $ue
+			if(-not $firstLine){
+				$message = [Environment]::NewLine + $message
+				$firstLine = $false
+			}
+			$message
+		}
+	}
+}
+
+# Non-disruptively print a formatted error message to the console
+function err(){
+	param ([String] $message)
+	$eol = [Environment]::NewLine
+	$msg = ""
+	if($message){ $msg = $message.toString() }
+	else        { $input | % {if($msg){$msg += $eol}; $msg += $_.toString()} }
+	if($msg -and $args.count){ $msg = [String]::format.invoke(@($msg) + $args) }
+	if($env:GITHUB_ACTIONS){ $msg = "::error::$msg" }
+	else{ $msg = "{0}[31m{0}[1mERROR:{0}[22m {1}{0}[39m" -f [char]27, "$msg" }
+	if($host.name -eq "ConsoleHost"){ [Console]::Error.writeLine($msg) }
+	else{ $host.ui.writeErrorLine($msg) }
+	return
+}
+
+# Print a formatted warning to the console
+function warn(){
+	param ([String] $message)
+	$eol = [Environment]::NewLine
+	$msg = ""
+	if($message){ $msg = $message.toString() }
+	else        { $input | % {if($msg){$msg += $eol}; $msg += $_.toString()} }
+	if($msg -and $args.count){ $msg = [String]::format.invoke(@($msg) + $args) }
+	if($env:GITHUB_ACTIONS){ Write-Host "::warning::$msg"; return }
+	elseif($env:APPVEYOR)  { $msg = "WARNING: $msg" }
+	$msg | Write-Warning
+	return
+}
+
 # Return true if a path exists on disk
 function exists(){
 	param ($path)
@@ -85,7 +147,7 @@ function isFile(){
 # Terminate the running script with an error message
 function die(){
 	param ($message = "", $code = 1)
-	Write-Host $message
+	if($message){ err $message }
 	$host.SetShouldExit($code)
 	Exit $code
 }

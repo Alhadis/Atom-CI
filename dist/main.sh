@@ -86,10 +86,58 @@ cmd(){
 	"$@"
 }
 
+# Format a string with underlines
+ul(){
+	case $# in
+		# Read from standard input
+		0) [ -t 0 ] && return || sed "`printf 's/^/\033[4m/;s/$/\033[24m/'`" ;;
+		
+		# Read from parameters
+		1) printf '\033[4m%s\033[24m' "$1" ;;
+		*) set -- "$1" "`sh -c "
+			format='\\\\033[4m'\\\"%s\\\"'\\\\033[24m'
+			shift; [ \\\$# -eq 0 ] || printf  \\\"\\\$format\\\" \\\"\\\$1\\\"
+			shift; [ \\\$# -eq 0 ] || printf \\\" \\\$format\\\" \\\"\\\$@\\\"
+		" -- "$@"`"; printf "$@" ;;
+	esac
+
+	# Append a trailing newline if standard output is a terminal
+	if [ -t 1 ]; then printf '\n'; fi
+}
+
+# Print a formatted error message to the console
+err(){
+	if [ $# -eq 0 ] && [ -t 0 ]; then return; fi
+	[ "$GITHUB_ACTIONS" ] && printf '::error::' || {
+		[ "$TRAVIS_JOB_ID" ] && sgr 1 31 || sgr 1 38 5 9
+		printf 'ERROR: '
+		sgr 22
+	}
+	[ $# -gt 0 ] && printf %s "`printf "$@"`" || sed ':x
+		$!{N;/\n/{s// /g;n;bx
+	};}'
+	[ -n "$GITHUB_ACTIONS" ] || sgr 39
+	if [ "$GITHUB_ACTIONS" ] || [ -t 1 ]; then printf '\n'; fi
+}
+
+# Print a formatted warning to the console
+warn(){
+	if [ $# -eq 0 ] && [ -t 0 ]; then return; fi
+	[ "$GITHUB_ACTIONS" ] && printf '::warning::' || {
+		[ "$TRAVIS_JOB_ID" ] && sgr 1 33 || sgr 1 38 5 11
+		printf 'WARNING: '
+		sgr 22
+	}
+	[ $# -gt 0 ] && printf %s "`printf "$@"`" || sed ':x
+		$!{N;/\n/{s// /g;n;bx
+	};}'
+	[ -n "$GITHUB_ACTIONS" ] || sgr 39
+	if [ "$GITHUB_ACTIONS" ] || [ -t 1 ]; then printf '\n'; fi
+}
+
 # Terminate execution with an error message
 die(){
-	set -- "$1" "$2" "`sgr 1`" "`sgr 31`" "`sgr`"
-	printf '%s%sfatal:%s%s %s%s\n' "$3" "$4" "$5" "$4" "$1" "$5"
+	err "${1:-Script terminated}"
 	exit ${2:-1}
 }
 
@@ -131,7 +179,7 @@ endFold(){
 		if [ $# -gt 0 ]; then
 			case $foldStack in
 				"$1"|"$1:"*|*":$1"|*":$1:"*) ;;
-				*) printf 'No such fold: %s\n' "$1"; return ;;
+				*) warn 'No such fold: %s' "$1"; return ;;
 			esac
 
 		# If no name was passed, default to whatever fold was most recently opened
@@ -161,7 +209,7 @@ switchToProject(){
 		else
 			set -- "$1$2$3"
 			if [ "$GITHUB_ACTIONS" ]; then printf '::warning::'; fi
-			printf 'Ignoring $ATOM_CI_PACKAGE_ROOT; "%s" is not a valid project directory\n' "$1"
+			warn 'Ignoring $ATOM_CI_PACKAGE_ROOT; "%s" is not a valid project directory' "$1"
 			ATOM_CI_PACKAGE_ROOT=`pwd`
 		fi
 	else
