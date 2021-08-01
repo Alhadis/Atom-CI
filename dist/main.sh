@@ -47,8 +47,8 @@ sgr(){
 	# mode causes `38;5;10` (bright green) to degrade into `32` (ordinary green).
 	shift
 
-	# Generate the final sequence
-	printf '\033[%sm' "$*" | sed 's/  */;/g'
+	# Generate the final sequence, stripping any erroneous newlines added by older sed(1) versions
+	printf '\033[%sm' "$*" | sed 's/  */;/g' | tr -d '\n'
 }
 
 # Print a colourful "==> $1"
@@ -66,7 +66,7 @@ argfmt(){
 		/^[]~#+:@^_[:alnum:][=[=]/.-]*[^]~#+:@^_[:alnum:][=[=]/.-][]~#+:@^_[:alnum:][=[=]/.-]*$/{
 			/^--*.*=/!s/[^]~#+:@^_[:alnum:][=[=]/.-]/\\&/;;n;bx
 		}; /'\''/! {s/^/'\''/;s/$/'\''/;n;bx
-	}; s/[$"\\@]/\\&/g;s/^/"/;s/$/"/;}' ;;
+	}; s/[$"\\@]/\\&/g;s/^/"/;s/$/"/;}' | tr -d '\n' ;;
 	esac; shift; [ $# -eq 0 ] || printf ' '; done
 }
 
