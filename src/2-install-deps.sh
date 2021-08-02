@@ -28,7 +28,7 @@ apmInstall(){
 	endFold 'installers'
 	startFold 'install-deps' 'Installing dependencies'
 	set -- "`printf '\033'`" "$1"
-	set -- "$@" "/$1\\[[0-9][;0-9]*m[^$1"'[:blank:]]\{1,\}$/{N;s/\n//;s/$/\
+	set -- "$@" "/$1\\[[0-9][;0-9]*m[^$1"'[:blank:]]\{1,\}$/{/^\n*$/{$d;};N;s/\n//;s/$/\
 /;}'; shift
 	if [ -f package-lock.json ] && apmHasCI; then
 		ul 'Installing from %s\n' package-lock.json

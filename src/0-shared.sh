@@ -73,7 +73,6 @@ argfmt(){
 
 # Embellish and echo a command that's about to be executed
 cmdfmt(){
-	set -- "`argfmt "$@"`"
 	if [ "$GITHUB_ACTIONS" ]; then
 		printf '[command]%s\n' "$1"
 	else
@@ -83,7 +82,7 @@ cmdfmt(){
 
 # Print a command before executing it
 cmd(){
-	cmdfmt "$@"
+	cmdfmt "`argfmt "$@"`"
 	if [ "$ATOM_CI_DRY_RUN" ]; then return 0; fi # DEBUG
 	"$@"
 }
