@@ -389,7 +389,7 @@ function json(){
 }
 
 # Currently-open folds
-$script:folds = [System.Collections.ArrayList]::new()
+$script:folds = [System.Collections.Stack]::new()
 
 # Begin a collapsible folding region
 function startFold(){
@@ -399,7 +399,8 @@ function startFold(){
 		Write-Host -NoNewline $text
 	}
 	elseif($env:GITHUB_ACTIONS -and $label){
-		if($script:folds.Add($id) -eq 0){
+		$script:folds.push($id)
+		if($script:folds.count -lt 2){
 			Write-Host "::group::$label"
 			return
 		}
@@ -416,15 +417,16 @@ function endFold(){
 	}
 	elseif($env:GITHUB_ACTIONS -and $script:folds.Count -gt 0){
 		if($null -eq $id){
-			$id = $script:folds[-1]
+			$id = $script:folds.peek()
 		}
 		elseif(-not $script:folds.Contains($id)){
 			Write-Warning "No such fold: $id"
 			return
 		}
-		$index = $script:folds.indexOf($id)
-		$count = $script:folds.count - $index
-		$script:folds.removeRange($index, $count)
+		while($script:folds.count -gt 0){
+			$item = $script:folds.pop()
+			if($item -ceq $id){ break }
+		}
 		if($script:folds.count -eq 0){
 			Write-Host "::endgroup::"
 		}
