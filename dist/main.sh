@@ -99,9 +99,6 @@ ul(){
 			shift; [ \\\$# -eq 0 ] || printf \\\" \\\$format\\\" \\\"\\\$@\\\"
 		" -- "$@"`"; printf "$@" ;;
 	esac
-
-	# Append a trailing newline if standard output is a terminal
-	if [ -t 1 ]; then printf '\n'; fi
 }
 
 # Print a formatted error message to the console
@@ -143,6 +140,16 @@ die(){
 # Emit an arbitrary byte-sequence to standard output
 putBytes(){
 	printf %b "`printf \\\\%03o "$@"`"
+}
+
+# Trim leading empty lines
+trimStart(){
+	sed -n '/[^[:blank:]]/,$ p'
+}
+
+# Trim trailing empty lines
+trimEnd(){
+	sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
 }
 
 # Colon-delimited list of currently-open folds
@@ -470,15 +477,15 @@ apmInstall(){
 	endFold 'installers'
 	startFold 'install-deps' 'Installing dependencies'
 	set -- "`printf '\033'`" "$1"
-	set -- "$@" "/$1\\[[0-9][;0-9]*m[^$1"'[:blank:]]\{1,\}$/{/^\n*$/{$d;};N;s/\n//;s/$/\
+	set -- "$@" "/$1\\[[0-9][;0-9]*m[^$1"'[:blank:]]\{1,\}$/{N;s/\n//;s/$/\
 /;}'; shift
 	if [ -f package-lock.json ] && apmHasCI; then
 		ul 'Installing from %s\n' package-lock.json
-		cmd "${APM_SCRIPT_PATH}" ci $1 | sed "$2"
+		cmd "${APM_SCRIPT_PATH}" ci $1 | sed "$2" | trimEnd
 	else
 		ul 'Installing from %s\n' package.json
-		cmd "${APM_SCRIPT_PATH}" install $1 | sed "$2"
-		cmd "${APM_SCRIPT_PATH}" clean      | sed "$2"
+		cmd "${APM_SCRIPT_PATH}" install $1 | sed "$2" | trimEnd
+		cmd "${APM_SCRIPT_PATH}" clean      | sed "$2" | trimEnd
 	fi
 }
 

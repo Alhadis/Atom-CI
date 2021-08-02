@@ -101,9 +101,6 @@ ul(){
 			shift; [ \\\$# -eq 0 ] || printf \\\" \\\$format\\\" \\\"\\\$@\\\"
 		" -- "$@"`"; printf "$@" ;;
 	esac
-
-	# Append a trailing newline if standard output is a terminal
-	if [ -t 1 ]; then printf '\n'; fi
 }
 
 # Print a formatted error message to the console
@@ -145,6 +142,16 @@ die(){
 # Emit an arbitrary byte-sequence to standard output
 putBytes(){
 	printf %b "`printf \\\\%03o "$@"`"
+}
+
+# Trim leading empty lines
+trimStart(){
+	sed -n '/[^[:blank:]]/,$ p'
+}
+
+# Trim trailing empty lines
+trimEnd(){
+	sed -e :a -e '/^\n*$/{$d;N;};/\n$/ba'
 }
 
 # Colon-delimited list of currently-open folds
