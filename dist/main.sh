@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
+# Return true if running in a recognised CI environment
+isCI(){
+	test -n "${TRAVIS_JOB_ID}${GITHUB_ACTIONS}${APPVEYOR}"
+}
+
 # Emit an ANSI escape sequence to style console output.
 # - Arguments: [sgr-id...]
 # - Example:   `sgr 34 22`   => "\033[34;22m"
@@ -449,7 +454,7 @@ case `uname -s | tr A-Z a-z` in
 esac
 
 # List environment variables if it's safe to do so
-if [ "$TRAVIS_JOB_ID" ] || [ "$GITHUB_ACTIONS" ] || [ "$ATOM_CI_DUMP_ENV" ]; then
+if isCI || [ "$ATOM_CI_DUMP_ENV" ]; then
 	startFold 'env-dump' 'Dumping environment variables'
 	cmdfmt "env | sort"
 	# Avoid using `env | sort`; some variables (i.e., $TRAVIS_COMMIT_MESSAGE) may contain newlines

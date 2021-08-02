@@ -1,3 +1,8 @@
+# Return true if running in a recognised CI environment
+function isCI(){
+	return $env:TRAVIS_JOB_ID -or $env:GITHUB_ACTIONS -or $env:APPVEYOR
+}
+
 # Display a coloured marker to demarcate logical sections of output
 function title(){
 	param ([Parameter(Mandatory)] [String] $text)

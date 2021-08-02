@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# Return true if running in a recognised CI environment
+isCI(){
+	test -n "${TRAVIS_JOB_ID}${GITHUB_ACTIONS}${APPVEYOR}"
+}
+
 # Emit an ANSI escape sequence to style console output.
 # - Arguments: [sgr-id...]
 # - Example:   `sgr 34 22`   => "\033[34;22m"

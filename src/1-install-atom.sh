@@ -98,7 +98,7 @@ case `uname -s | tr A-Z a-z` in
 esac
 
 # List environment variables if it's safe to do so
-if [ "$TRAVIS_JOB_ID" ] || [ "$GITHUB_ACTIONS" ] || [ "$ATOM_CI_DUMP_ENV" ]; then
+if isCI || [ "$ATOM_CI_DUMP_ENV" ]; then
 	startFold 'env-dump' 'Dumping environment variables'
 	cmdfmt "env | sort"
 	# Avoid using `env | sort`; some variables (i.e., $TRAVIS_COMMIT_MESSAGE) may contain newlines

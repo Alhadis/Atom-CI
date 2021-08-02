@@ -2,6 +2,11 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# Return true if running in a recognised CI environment
+function isCI(){
+	return $env:TRAVIS_JOB_ID -or $env:GITHUB_ACTIONS -or $env:APPVEYOR
+}
+
 # Display a coloured marker to demarcate logical sections of output
 function title(){
 	param ([Parameter(Mandatory)] [String] $text)
@@ -696,7 +701,7 @@ else{
 unzip "atom.zip" $env:ATOM_PATH
 
 # Dump environment variables
-if($env:TRAVIS_JOB_ID -or $env:GITHUB_ACTIONS -or $env:APPVEYOR -or $env:ATOM_CI_DUMP_ENV){
+if((isCI) -or $env:ATOM_CI_DUMP_ENV){
 	startFold 'env-dump' 'Dumping environment variables'
 	dumpEnv
 	endFold 'env-dump'
