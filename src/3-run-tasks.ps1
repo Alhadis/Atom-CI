@@ -17,7 +17,7 @@ function findConfig(){
 		$config = Join-Path $path $filename
 		if(isFile $config){
 			$config = Resolve-Path $config
-			"Using config: {0}[4m$path{0}[24m" -f [char]0x1B | Write-Verbose
+			ul "Using config: {0}" $path | Write-Verbose
 			return $config.path
 		}
 	}

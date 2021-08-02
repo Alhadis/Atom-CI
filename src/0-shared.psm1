@@ -199,7 +199,7 @@ function mkdirp(){
 			New-Item -Type Directory $path > $null
 		}
 		elseif(-not(isDir $path)){
-			Write-Error "Not a directory: $path"
+			ul "Not a directory: {0}" $path | err
 			break
 		}
 	}
@@ -289,16 +289,14 @@ function unzip(){
 	param ($archive, $destination = ".", [Switch] $noOverwrite)
 	
 	# Expand relative paths to absolute ones
-	$us  = [char]0x1B + "[4m"
-	$ue  = [char]0x1B + "[24m"
 	$cwd = Get-Location
 	if(-not (Split-Path -Path $archive     -IsAbsolute)){ $archive     = Join-Path $cwd $archive }
 	if(-not (Split-Path -Path $destination -IsAbsolute)){ $destination = Join-Path $cwd $destination }
 	if($noOverwrite -and (isDir $destination) -and ($cwd -ne (Resolve-Path $destination))){
-		Write-Host "Extraction directory $us$destination$ue already exists, skipping"
+		ul "Extraction directory {0} already exists, skipping" $destination
 		return
 	}
-	Write-Host "Extracting $us$archive$ue to $us$destination$ue..."
+	ul "Extracting {0} to {1}..." $archive $destination
 	
 	# Delete and recreate target directory
 	Remove-Item -Recurse -Force -ErrorAction Ignore $destination
@@ -425,7 +423,7 @@ function endFold(){
 			$id = $script:folds.peek()
 		}
 		elseif(-not $script:folds.Contains($id)){
-			Write-Warning "No such fold: $id"
+			warn "No such fold: $id"
 			return
 		}
 		while($script:folds.count -gt 0){
@@ -518,7 +516,7 @@ function downloadAtom(){
 	
 	# Reuse an earlier download if one exists
 	if($reuseExisting -and (isFile $saveAs)){
-		"Already downloaded: {0}[4m$saveAs{0}[24m" -f [char]0x1B | Write-Host
+		ul "Already downloaded: {0}" $saveAs
 		return
 	}
 	
@@ -529,7 +527,7 @@ function downloadAtom(){
 		| gsub "#.*"
 		
 		if($url -match "^https://github\.com/.*/$release/$assetName(?:$|\?)"){
-			"Downloading Atom $release from {0}[4m$url{0}[24m" -f [char]0x1B | Write-Host
+			ul "Downloading Atom $release from {0}" $url
 			Invoke-WebRequest -URI $url -UseBasicParsing -OutFile $saveAs -Headers @{
 				Accept = "application/octet-stream"
 			} > $null
@@ -542,24 +540,19 @@ function downloadAtom(){
 # Switch working directory to that of the user's project
 function switchToProject(){
 	$dir = $env:ATOM_CI_PACKAGE_ROOT
-	$us  = [char]0x1B + "[4m"
-	$ue  = [char]0x1B + "[24m"
 	if($dir){
 		if((isDir $dir) -and (isFile "$dir/package.json")){
 			$dir = (Resolve-Path $dir).path
-			"Switching to ATOM_CI_PACKAGE_ROOT: $us$dir$ue" | Write-Host
+			ul "Switching to ATOM_CI_PACKAGE_ROOT: {0}" $dir
 			Set-Location $dir
 		}
 		else{
-			$msg = '"{1}{0}{2}" is not a valid project directory' -f $dir, $us, $ue
-			$msg = "Ignoring ATOM_CI_PACKAGE_ROOT; $msg"
-			if($env:GITHUB_ACTIONS){ Write-Host "::warning::$msg" }
-			else                   { Write-Warning "$msg" }
+			ul 'Ignoring ATOM_CI_PACKAGE_ROOT; "{0}" is not a valid project directory' $dir | warn
 		}
 	}
 	else{
 		$dir = (Get-Location).toString()
-		"Working directory: $us$dir$ue" | Write-Host
+		ul "Working directory: {0}" $dir
 	}
 	setEnv "ATOM_CI_PACKAGE_ROOT" $dir
 	assertValidProject

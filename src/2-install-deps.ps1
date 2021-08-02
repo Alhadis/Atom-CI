@@ -12,7 +12,7 @@ if($null -eq $env:ATOM_PATH){
 # Display version info for Atom/Node/?PM
 function showVersions(){
 	param ([Switch] $all)
-	Write-Host "Printing version info"
+	Write-Host "Printing version info..."
 	cmd "$env:ATOM_SCRIPT_PATH" --version | Out-String
 	cmd "$env:APM_SCRIPT_PATH"  --version --no-color
 	if(-not $all){ return }
@@ -47,16 +47,13 @@ function apmHasCI(){
 function apmInstall(){
 	endFold "installers"
 	startFold "install-deps" "Installing dependencies"
-	$ESC = [char]0x1B
-	$UL  = "$ESC[4m"   # Underlined text
-	$NU  = "$ESC[24m"  # No underline
 	$fix = '(\e\[\d[;\d]*m[^[:cntrl:][:blank:]]+)(\r?\n)([^\r\n]*)\k<2>?$'
 	if((isFile "package-lock.json") -and (apmHasCI)){
-		Write-Host "Installing from ${UL}package-lock.json${NU}"
+		ul "Installing from {0}" 'package-lock.json'
 		(cmd "$env:APM_SCRIPT_PATH" ci @args | Out-String | gsub $fix '$1$3$2').trim()
 	}
 	else{
-		Write-Host "Installing from ${UL}package.json${NU}"
+		ul "Installing from {0}" 'package.json'
 		(cmd "$env:APM_SCRIPT_PATH" install @args | Out-String | gsub $fix '$1$3$2').trim()
 		(cmd "$env:APM_SCRIPT_PATH" clean         | Out-String | gsub $fix '$1$3$2').trim()
 	}
@@ -90,10 +87,11 @@ else{
 
 # Install other packages which this package depends on
 if($env:APM_TEST_PACKAGES){
-	Write-Host "Installing package dependencies"
+	startFold "install-package-deps" "Installing package dependencies"
 	($env:APM_TEST_PACKAGES.trim()) -split '\s+' | % {
 		cmd "$env:APM_SCRIPT_PATH" install $_
 	}
+	endFold
 }
 
 endFold "install-deps"

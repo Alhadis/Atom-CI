@@ -92,14 +92,34 @@ cmd(){
 	"$@"
 }
 
-# Format a string with underlines
+# Format a string with underlines.
+# - Arguments: [format-string] [strings-to-underline...]
+#              [string-to-underline]
+# - Examples: `ul 'John Doe <%s>\n' "john.doe@gmail.com"`
+#             `ul https://github.com/`
+#             `echo https://github.com/ | ul`
+#             `grep -oEe "<[^\s<>@]+@[^\s<>]+>" .mailmap | tr -d "<>" | ul`
+# Side-notes:
+#   Unlike the PowerShell version of this function, a trailing newline is *not*
+#   automatically appended to the output.
+#
+#   This function shadows the ul(1) binary used for converting overstriking into
+#   into true ANSI bold and underline effects (usually with nroff(1) output). The
+#   original command, if needed, can still be invoked via the usual `command ul`.
 ul(){
 	case $# in
 		# Read from standard input
-		0) [ -t 0 ] && return || sed "`printf 's/^/\033[4m/;s/$/\033[24m/'`" ;;
+		0) [ -t 0 ] && return || sed "s/^/`sgr 4`/; s/\$/`sgr 24`/" ;;
 		
 		# Read from parameters
-		1) printf '\033[4m%s\033[24m' "$1" ;;
+		1) sgr 4; printf %s "$1"; sgr 24 ;;
+		2) printf "$1" "`sgr 4; printf %s "$2"; sgr 24`" ;;
+		3) printf "$1" \
+			"`sgr 4; printf %s "$2"; sgr 24`" \
+			"`sgr 4; printf %s "$3"; sgr 24`" ;;
+		
+		# FIXME: Replace this with something performant, then axe
+		#        the optimised common-case optimisations above.
 		*) set -- "$1" "`sh -c "
 			format='\\\\033[4m'\\\"%s\\\"'\\\\033[24m'
 			shift; [ \\\$# -eq 0 ] || printf  \\\"\\\$format\\\" \\\"\\\$1\\\"
@@ -140,7 +160,7 @@ warn(){
 
 # Terminate execution with an error message
 die(){
-	err "${1:-Script terminated}"
+	err "${1:-Script terminated}" >&2
 	exit ${2:-1}
 }
 
@@ -211,24 +231,21 @@ endFold(){
 
 # Switch working directory to that of the user's project
 switchToProject(){
-	set -- "`sgr 4`" "$ATOM_CI_PACKAGE_ROOT" "`sgr 24`"
-	if [ "$2" ]; then
-		if [ -s "$2/package.json" ]; then
-			ATOM_CI_PACKAGE_ROOT=`cd "$2" && pwd`
-			set -- "$2" "$1${ATOM_CI_PACKAGE_ROOT}$3"
-			printf 'Switching to ATOM_CI_PACKAGE_ROOT: %s\n' "$2"
+	set -- "$ATOM_CI_PACKAGE_ROOT"
+	if [ "$1" ]; then
+		if [ -s "$1/package.json" ]; then
+			ATOM_CI_PACKAGE_ROOT=`cd "$1" && pwd`
+			ul 'Switching to ATOM_CI_PACKAGE_ROOT: %s\n' "$1"
 			# shellcheck disable=SC2164
 			cd "$1"
 		else
-			set -- "$1$2$3"
-			if [ "$GITHUB_ACTIONS" ]; then printf '::warning::'; fi
-			warn 'Ignoring $ATOM_CI_PACKAGE_ROOT; "%s" is not a valid project directory' "$1"
+			ul 'Ignoring $ATOM_CI_PACKAGE_ROOT; "%s" is not a valid project directory' "$1" | warn
 			ATOM_CI_PACKAGE_ROOT=`pwd`
 		fi
 	else
-		set -- "$1" "`pwd`" "$3"
-		printf 'Working directory: %s\n' "$1$2$3"
-		ATOM_CI_PACKAGE_ROOT=$2
+		set -- "`pwd`"
+		ul 'Working directory: %s\n' "$1"
+		ATOM_CI_PACKAGE_ROOT=$1
 	fi
 	export ATOM_CI_PACKAGE_ROOT
 	assertValidProject
@@ -306,14 +323,14 @@ getLatestRelease(){
 getReleaseByTag(){
 	set -- "https://github.com/$1/releases/tag/$2" "$3"
 	set -- "$1" "$2" "`curl -sSqL $1`"
-	if [ ! "$3" ]; then die "Release not found: `sgr 4`$1`sgr 24`" 3; fi
+	if [ ! "$3" ]; then die "`ul 'Release not found: %s' "$1"`" 3; fi
 	printf %s "$3" | scrapeDownloadURL "$2"
 }
 
 # Download a file.
 # - Arguments: [url] [target-filename]
 download(){
-	printf 'Downloading "%s" from %s%s%s\n' "$2" "`sgr 4`" "$1" "`sgr`"
+	printf 'Downloading "%s"' "$2"; ul ' from %s\n' "$1"
 	if [ "$ATOM_CI_DRY_RUN" ]; then return 0; fi # DEBUG
 	cmd curl -#fqL -H 'Accept: application/octet-stream' -o "$2" "$1" \
 	|| die 'Failed to download file' $?
