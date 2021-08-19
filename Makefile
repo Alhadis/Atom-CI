@@ -47,15 +47,78 @@ clean:
 
 # Install Debian packages needed to run Atom headlessly
 apt-install:
-	sudo apt-get install \
+	sudo apt-get update
+	sudo apt-get install -y \
 		build-essential \
+		ca-certificates \
 		fakeroot \
+		fonts-liberation \
+		gconf-service \
 		git \
+		libappindicator1 \
+		libasound2 \
+		libatk-bridge2.0-0 \
+		libatk1.0-0 \
+		libc6 \
+		libcairo2 \
+		libcups2 \
+		libdbus-1-3 \
+		libexpat1 \
+		libfontconfig1 \
+		libgbm-dev \
+		libgcc1 \
+		libgconf-2-4 \
 		libgconf2-4 \
+		libgdk-pixbuf2.0-0 \
+		libglib2.0-0 \
+		libgtk-3-0 \
+		libgtk2.0-0 \
+		libnotify-dev \
+		libnspr4 \
+		libnss3 \
+		libnss3 \
+		libpango-1.0-0 \
+		libpangocairo-1.0-0 \
 		libsecret-1-dev \
-		xvfb \
+		libstdc++6 \
+		libx11-6 \
+		libx11-xcb1 \
+		libxcb1 \
+		libxcomposite1 \
+		libxcursor1 \
+		libxdamage1 \
+		libxext6 \
+		libxfixes3 \
+		libxi6 \
+		libxrandr2 \
+		libxrender1 \
 		libxss1 \
-		libnss3
+		libxtst6 \
+		lsb-release \
+		wget \
+		xauth \
+		xdg-utils \
+		xvfb
+	@ command -v node >/dev/null 2>&1 || "$(MAKE)" apt-install-node
+	@ command -v pwsh >/dev/null 2>&1 || "$(MAKE)" apt-install-powershell
+
+
+# Install Node.js for Ubuntu
+# - Source: https://github.com/nodesource/distributions/blob/master/README.md#deb
+apt-install-node:
+	curl -fsSL 'https://deb.nodesource.com/setup_current.x' | sudo -E bash -
+	sudo apt-get install -y nodejs
+
+
+# Install PowerShell for Ubuntu
+# - Source: https://docs.microsoft.com/powershell/scripting/install/installing-powershell-core-on-linux
+apt-install-powershell:
+	sudo apt-get install -y wget apt-transport-https software-properties-common
+	wget "https://packages.microsoft.com/config/ubuntu/`lsb_release -sr`/packages-microsoft-prod.deb"
+	sudo dpkg -i packages-microsoft-prod.deb
+	rm -f packages-microsoft-prod.deb
+	sudo apt-get update
+	sudo apt-get install -y powershell
 
 
 # Regenerate concatenated script when source files are modified
