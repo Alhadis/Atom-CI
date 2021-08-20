@@ -637,6 +637,7 @@ function setupEnvironment(){
 		$npmPath    = "$atomPath/usr/share/$scriptName/resources/app/apm/node_modules/.bin"
 		setEnv "PATH" "$atomPath/usr/bin:${npmPath}:${env:PATH}"
 		setEnv "APM_SCRIPT_NAME" $apmName
+		setEnv "ATOM_EXE_PATH" $scriptPath
 		$npmPath += "/npm"
 	}
 	# Unsupported platform (shouldn't happen)

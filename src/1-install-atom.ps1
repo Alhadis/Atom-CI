@@ -10,6 +10,17 @@ if($null -eq $env:ATOM_PATH){
 switchToProject
 setupEnvironment
 
+# Initialise display server on Linux
+$pidFile = "/tmp/custom_xvfb_99.pid"
+if($IsLinux -and -not (exists $pidFile)){
+	$daemon = which "start-stop-daemon"
+	$xvfb   = which "Xvfb"
+	if($daemon -and $xvfb){
+		cmd "$daemon" "-Sqombp" $pidFile "-x" "$xvfb" "--" ":99" "-ac" "-screen" 0 1280x1024x16
+		setEnv DISPLAY ":99"
+	}
+}
+
 # Download Atom
 if($env:ATOM_RELEASE){
 	startFold "install-atom" "Installing Atom ($env:ATOM_RELEASE)"
@@ -22,7 +33,12 @@ else{
 }
 
 # Extract files
-unzip $env:ATOM_ASSET_NAME $env:ATOM_PATH -noOverwrite
+if($env:ATOM_ASSET_NAME.endsWith(".deb")){
+	cmd dpkg-deb "-x" $env:ATOM_ASSET_NAME $env:ATOM_PATH
+}
+else{
+	unzip $env:ATOM_ASSET_NAME $env:ATOM_PATH -noOverwrite
+}
 
 # Dump environment variables
 if((isCI) -or $env:ATOM_CI_DUMP_ENV){

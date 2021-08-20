@@ -125,7 +125,7 @@ To-do list
 ----------
 * [ ] **Support the `atom-mocha` executable, once it can be run globally**
 * [x] **Support an environment variable for specifying package's root directory**
-* [ ] **Test PowerShell version on Linux**
+* [x] **Test PowerShell version on Linux**
 * [x] **Use GitHub's `[command]` syntax for echoing external commands**
 * [x] **Make POSIX version's `$PATH` tampering consistent with PowerShell's**
 * [x] **Document and dogfood AppVeyor usage**

@@ -640,6 +640,7 @@ function setupEnvironment(){
 		$npmPath    = "$atomPath/usr/share/$scriptName/resources/app/apm/node_modules/.bin"
 		setEnv "PATH" "$atomPath/usr/bin:${npmPath}:${env:PATH}"
 		setEnv "APM_SCRIPT_NAME" $apmName
+		setEnv "ATOM_EXE_PATH" $scriptPath
 		$npmPath += "/npm"
 	}
 	# Unsupported platform (shouldn't happen)
@@ -679,19 +680,35 @@ setEncoding "UTF8"
 switchToProject
 setupEnvironment
 
+# Initialise display server on Linux
+$pidFile = "/tmp/custom_xvfb_99.pid"
+if($IsLinux -and -not (exists $pidFile)){
+	$daemon = which "start-stop-daemon"
+	$xvfb   = which "Xvfb"
+	if($daemon -and $xvfb){
+		cmd "$daemon" "-Sqombp" $pidFile "-x" "$xvfb" "--" ":99" "-ac" "-screen" 0 1280x1024x16
+		setEnv DISPLAY ":99"
+	}
+}
+
 # Download Atom
 if($env:ATOM_RELEASE){
 	startFold "install-atom" "Installing Atom ($env:ATOM_RELEASE)"
-	downloadAtom -release $env:ATOM_RELEASE $env:ATOM_ASSET_NAME -saveAs "atom.zip"
+	downloadAtom -release $env:ATOM_RELEASE $env:ATOM_ASSET_NAME
 }
 else{
 	$channel = $env:ATOM_CHANNEL.tolower()
 	startFold "install-atom" "Installing Atom (Latest $channel release)"
-	downloadAtom -channel $channel $env:ATOM_ASSET_NAME -saveAs "atom.zip"
+	downloadAtom -channel $channel $env:ATOM_ASSET_NAME
 }
 
 # Extract files
-unzip "atom.zip" $env:ATOM_PATH
+if($env:ATOM_ASSET_NAME.endsWith(".deb")){
+	cmd dpkg-deb "-x" $env:ATOM_ASSET_NAME $env:ATOM_PATH
+}
+else{
+	unzip $env:ATOM_ASSET_NAME $env:ATOM_PATH
+}
 
 # Dump environment variables
 if((isCI) -or $env:ATOM_CI_DUMP_ENV){
